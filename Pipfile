@@ -19,6 +19,7 @@ sklearn = "*"
 scikit-image = "*"
 flask-bcrypt = "*"
 flask-jwt-extended = "*"
+imutils = "*"
 
 [dev-packages]
 

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from itertools import zip_longest
 # import scipy.interpolate
+import scipy
 from scipy.interpolate import interp1d
 import cv2
 import numpy as np
@@ -13,8 +14,6 @@ import os
 import dlib
 from pylab import *
 from skimage import io
-
-
 
 
 class ApplyMakeup(DetectLandmarks):
@@ -88,7 +87,7 @@ class ApplyMakeup(DetectLandmarks):
         count = len(inner[0]) - 1
         last_inner = [inner[0][count], inner[1][count]]
         for o_point, i_point in zip_longest(
-            outer_curve, inner_curve, fillvalue=last_inner
+                outer_curve, inner_curve, fillvalue=last_inner
         ):
             line = scipy.interpolate.interp1d(
                 [o_point[0], i_point[0]], [o_point[1], i_point[1]], 'linear')
@@ -143,7 +142,7 @@ class ApplyMakeup(DetectLandmarks):
         """ Adds base colour to all points on lips, at mentioned intensity. """
         val = color.rgb2lab(
             (self.image[self.lip_y, self.lip_x] / 255.)
-            .reshape(len(self.lip_y), 1, 3)
+                .reshape(len(self.lip_y), 1, 3)
         ).reshape(len(self.lip_y), 3)
         l_val, a_val, b_val = np.mean(val[:, 0]), np.mean(
             val[:, 1]), np.mean(val[:, 2])
@@ -151,10 +150,10 @@ class ApplyMakeup(DetectLandmarks):
             np.array(
                 (self.red_l / 255., self.green_l / 255., self.blue_l / 255.)
             ).reshape(1, 1, 3)
-        ).reshape(3,)
+        ).reshape(3, )
         l_final, a_final, b_final = (l1_val - l_val) * \
-            intensity, (a1_val - a_val) * \
-            intensity, (b1_val - b_val) * intensity
+                                    intensity, (a1_val - a_val) * \
+                                    intensity, (b1_val - b_val) * intensity
         val[:, 0] = np.clip(val[:, 0] + l_final, 0, 100)
         val[:, 1] = np.clip(val[:, 1] + a_final, -127, 128)
         val[:, 2] = np.clip(val[:, 2] + b_final, -127, 128)
@@ -204,7 +203,7 @@ class ApplyMakeup(DetectLandmarks):
         L1, A1, B1 = color.rgb2lab(
             np.array((self.red_b / 255., self.green_b / 255., self.blue_b / 255.)).reshape(1, 1, 3)).reshape(3, )
         ll, aa, bb = (L1 - L) * intensity, (A1 - A) * \
-            intensity, (B1 - B) * intensity
+                     intensity, (B1 - B) * intensity
         val[:, 0] = np.clip(val[:, 0] + ll, 0, 100)
         val[:, 1] = np.clip(val[:, 1] + aa, -127, 128)
         val[:, 2] = np.clip(val[:, 2] + bb, -127, 128)
@@ -236,7 +235,7 @@ class ApplyMakeup(DetectLandmarks):
         img_blur_3d[:, :, 1] = img_mask
         img_blur_3d[:, :, 2] = img_mask
         self.image_copy = (
-            img_blur_3d * self.image + (1 - img_blur_3d) * self.image_copy).astype('uint8')
+                img_blur_3d * self.image + (1 - img_blur_3d) * self.image_copy).astype('uint8')
 
     def apply_lipstick(self, filename, rlips, glips, blips, ksize_h, ksize_w):
         """
@@ -265,7 +264,7 @@ class ApplyMakeup(DetectLandmarks):
         self.__fill_color(uol_c, uil_c, lol_c, lil_c, ksize_h, ksize_w)
         self.im_copy = cv2.cvtColor(self.im_copy, cv2.COLOR_BGR2RGB)
         name = 'color_' + str(self.red_l) + '_' + \
-            str(self.green_l) + '_' + str(self.blue_l)
+               str(self.green_l) + '_' + str(self.blue_l)
         # file_name = 'lip_output-' + name + '.jpg'
         file_name = 'lip_output-{}x{}_{}.jpg'.format(ksize_h, ksize_w, name)
 
@@ -311,7 +310,7 @@ class ApplyMakeup(DetectLandmarks):
         self.__smoothen_blush(face_top_x, face_top_y, ksize_h, ksize_w)
 
         name = 'color_' + str(self.red_b) + '_' + \
-            str(self.green_b) + '_' + str(self.blue_b)
+               str(self.green_b) + '_' + str(self.blue_b)
         # # file_name = 'lip_output-' + name + '.jpg'
 
         # cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
@@ -359,7 +358,7 @@ class ApplyMakeup(DetectLandmarks):
         self.__smoothen_blush(face_top_x, face_top_y, ksize_h, ksize_w)
 
         name = 'color_' + str(self.red_b) + '_' + \
-            str(self.green_b) + '_' + str(self.blue_b)
+               str(self.green_b) + '_' + str(self.blue_b)
         # cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         file_name = 'foundation_output-{}x{}_{}.jpg'.format(
             ksize_h, ksize_w, name)
@@ -368,4 +367,3 @@ class ApplyMakeup(DetectLandmarks):
         cv2.imwrite(os.path.join(SIMULATOR_OUTPUT, file_name),
                     self.image_copy)
         return file_name
-
