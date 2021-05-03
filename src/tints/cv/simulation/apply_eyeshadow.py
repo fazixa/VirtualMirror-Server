@@ -43,7 +43,6 @@ class Eyeshadow(object):
             `filepath (str)` of the saved output file, with applied lipstick.
 
         """
-
         self.r = int(rlips)
         self.g = int(glips)
         self.b = int(blips)

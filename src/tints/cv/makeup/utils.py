@@ -4,6 +4,7 @@ import dlib
 import time
 from src.tints.settings import SHAPE_68_PATH
 import threading
+from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
 
 detector = dlib.get_frontal_face_detector()
 face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
@@ -17,8 +18,7 @@ def apply_makeup_video():
     global cap, outputFrame, eyeshadow_state, r_value,b_value,g_value
     prev = 0
     frame_rate = 15
-    ret, frame = cap.read()
-    outputFrame = frame
+
     while True:
         ret, frame = cap.read()
         time_elapsed = time.time() - prev
@@ -31,19 +31,19 @@ def apply_makeup_video():
             detected_faces = detector(gray, 0)
             landmarks_x = []
             landmarks_y = []
-            # try:
-            for face in detected_faces:
-                pose_landmarks = face_pose_predictor(gray, face)
-                for i in range(68):
-                    landmarks_x.append(pose_landmarks.part(i).x)
-                    landmarks_y.append(pose_landmarks.part(i).y)
+            try:
+                for face in detected_faces:
+                    pose_landmarks = face_pose_predictor(gray, face)
+                    for i in range(68):
+                        landmarks_x.append(pose_landmarks.part(i).x)
+                        landmarks_y.append(pose_landmarks.part(i).y)
 
-                handle_makeup_Video(frame2,landmarks_x, landmarks_y)
-                outputFrame = frame
-            # except Exception as e:
-            #     print(e)
+                    frame = handle_makeup_Video(frame2,landmarks_x, landmarks_y)
+                    outputFrame = frame
+            except Exception as e:
+                print(e)
 
-def handle_makeup_State(makeup_state, r, g, b):
+def handle_makeup_on(makeup_state, r, g, b):
     global eyeshadow_state, r_eye, g_eye, b_eye
     global lipstick_state, r_lip , g_lip, b_lip
     if(makeup_state == 'eyeshadow'):
@@ -51,21 +51,25 @@ def handle_makeup_State(makeup_state, r, g, b):
         r_eye = r
         g_eye = g
         b_eye = b
-    elif(makeup_type == 'No_eyeshadow'):
-        eyeshadow_state = False
     if(makeup_state == 'lipstick'):
         lipstick_state = True
         r_lip = r
         g_lip = g
         b_lip = b
-    elif(makeup_type == 'No_lipstick'):
-        lipstick_state = False
+
+def handle_makeup_off(makeup_state):
+    global eyeshadow_state
+    if(makeup_state == 'eyeshadow'):
+        print("offfffffffff")
+        eyeshadow_state = False
 
 def handle_makeup_Video(frame,landmarks_x,landmarks_y):
     global r_eye,g_eye,b_eye
     if (eyeshadow_state):
         eye = Eyeshadow()
+        # print(r_eye,type(r_eye))
         frame = eye.apply_eyeshadow(frame,landmarks_x,landmarks_y,r_eye,g_eye,b_eye,0.7)
+    return frame
 
 
 def opencam():
@@ -73,12 +77,13 @@ def opencam():
     print("[INFO] camera sensor warming up...")
     cap = cv2.VideoCapture(0)
     time.sleep(2.0)
-    eyeshadow_state = False
+    print("time sleep finished")
     t = threading.Thread(target=apply_makeup_video, daemon=True)
     t.start()
 
 def caprelease():
-    global cap
+    global cap,eyeshadow_state
+    eyeshadow_state = False
     cap.release()
     cv2.destroyAllWindows()
 
