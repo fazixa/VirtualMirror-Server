@@ -22,7 +22,7 @@ app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 CORS(app, expose_headers=["x-suggested-filename"],
      resources={r"/*": {"origins": "*"}})
 host = os.environ.get('IP', '0.0.0.0')
-port = int(os.environ.get('PORT', 8080))
+port = int(os.environ.get('PORT', 5000))
 
 
 # Register route in application

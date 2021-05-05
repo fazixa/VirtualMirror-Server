@@ -4,7 +4,7 @@ import dlib
 import time
 from src.tints.settings import SHAPE_68_PATH
 import threading
-from src.tints.cv.simulation.apply_eyeshadow import eyeshadow
+from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
 from src.tints.cv.simulation.apply_blush import blush
 
 
@@ -20,6 +20,9 @@ class Color:
 
 
 class MakeupGlobals:
+    def __init__(self):
+        pass
+
     cap = None
     # r_value = None
     # g_value = None
@@ -34,6 +37,7 @@ class MakeupGlobals:
     eyeshadow_state = False
     detector = dlib.get_frontal_face_detector()
     face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
+    video_feed_enabled = True
 
     @classmethod
     def set_cap(cls, cap):
@@ -41,9 +45,8 @@ class MakeupGlobals:
 
 
 def eyeshadow_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, out_queue) -> None:
-    # print("testing eyeshadow worker")
-    eyes = eyeshadow(w_frame)
-    result = eyes.apply_eyeshadow(w_landmarks_x, w_landmarks_y, r, g, b, intensity)
+    eyes = Eyeshadow()
+    result = eyes.apply_eyeshadow(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity)
     result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
     out_queue.append({
         'image': result,
@@ -63,12 +66,11 @@ def blush_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, out_
 
 # MakeupGlobals.makeup_workers.append(eyeshadow_worker)
 # MakeupGlobals.makeup_workers.append(blush_worker)
-def toggle_makeup_worker(worker):
-    if MakeupGlobals.makeup_workers[worker.__name__][2]:
-        MakeupGlobals.makeup_workers[worker.__name__][2] = False
+def toggle_makeup_worker(worker_func) -> None:
+    if MakeupGlobals.makeup_workers[worker_func.__name__][2]:
+        MakeupGlobals.makeup_workers[worker_func.__name__][2] = False
     else:
-        MakeupGlobals.makeup_workers[worker.__name__][2] = True
-    print(MakeupGlobals.makeup_workers[worker.__name__][1])
+        MakeupGlobals.makeup_workers[worker_func.__name__][2] = True
 
 
 MakeupGlobals.makeup_workers = {
@@ -83,18 +85,20 @@ def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
 
     for makeup_worker in MakeupGlobals.makeup_workers:
         worker = MakeupGlobals.makeup_workers[makeup_worker]
-        print(worker[2])
+
         if worker[2]:
             t = threading.Thread(target=worker[0],
                                  args=(w_frame, w_landmarks_x, w_landmarks_y, worker[1].r, worker[1].g, worker[1].b,
                                        worker[1].intensity, shared_queue),
                                  daemon=True)
             threads.append(t)
-            t.start()
 
     if len(threads) > 0:
         for t in threads:
+            t.start()
             t.join()
+
+    if len(shared_queue) > 0:
 
         final_image = shared_queue.pop()['image']
 
@@ -108,8 +112,7 @@ def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
 
         return final_image
 
-    else:
-        return None
+    return None
 
 
 def apply_makeup_video():
@@ -118,35 +121,55 @@ def apply_makeup_video():
     frame_rate = 15
     # _, frame = MakeupGlobals.cap.read()
     while True:
+        if not MakeupGlobals.video_feed_enabled:
+            break
         ret, frame = MakeupGlobals.cap.read()
         MakeupGlobals.output_frame = frame
         time_elapsed = time.time() - prev
         frame = imutils.resize(frame, width=700)
 
-        if time_elapsed > 1. / frame_rate:
-            prev = time.time()
-            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            detected_faces = MakeupGlobals.detector(gray, 0)
-            landmarks_x = []
-            landmarks_y = []
-            # try:
-            for face in detected_faces:
-                pose_landmarks = MakeupGlobals.face_pose_predictor(gray, face)
-                for i in range(68):
-                    landmarks_x.append(pose_landmarks.part(i).x)
-                    landmarks_y.append(pose_landmarks.part(i).y)
+        # if time_elapsed > 1. / frame_rate:
+        prev = time.time()
+        gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        detected_faces = MakeupGlobals.detector(gray, 0)
+        landmarks_x = []
+        landmarks_y = []
+        # try:
+        for face in detected_faces:
+            pose_landmarks = MakeupGlobals.face_pose_predictor(gray, face)
+            for i in range(68):
+                landmarks_x.append(pose_landmarks.part(i).x)
+                landmarks_y.append(pose_landmarks.part(i).y)
 
-                filter_res = join_makeup_workers(frame2, landmarks_x, landmarks_y)
+            filter_res = join_makeup_workers(frame2, landmarks_x, landmarks_y)
 
-                if filter_res is not None:
-                    MakeupGlobals.output_frame = filter_res
+            if filter_res is not None:
+
+                (flag, encodedImage) = cv2.imencode(".png", filter_res)
+                # ensure the frame was successfully encoded
+                if not flag:
+                    continue
+                # yield the output frame in the byte format
+                yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+                    bytearray(encodedImage) + b'\r\n')
+            
+            else:
+                (flag, encodedImage) = cv2.imencode(".png", MakeupGlobals.output_frame)
+                # ensure the frame was successfully encoded
+                if not flag:
+                    continue
+                # yield the output frame in the byte format
+                yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+                    bytearray(encodedImage) + b'\r\n')
+            # if filter_res is not None:
+            #     MakeupGlobals.output_frame = filter_res
 
                 # Testing
-                cv2.imshow("Frame", MakeupGlobals.output_frame)
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord("q"):
-                    break
+                # cv2.imshow("Frame", MakeupGlobals.output_frame)
+                # key = cv2.waitKey(1) & 0xFF
+                # if key == ord("q"):
+                #     break
             # except Exception as e:
             #     print(e)
 
@@ -186,9 +209,10 @@ def opencam():
     # global cap, frame_rate, prev
     print("[INFO] camera sensor warming up...")
     MakeupGlobals.cap = cv2.VideoCapture(0)
-    time.sleep(2.0)
+    # time.sleep(2.0)
     # MakeupGlobals.eyeshadow_state = False
     apply_makeup_video()
+    # threading.Thread(target=apply_makeup_video, daemon=True).start()
 
 
 def caprelease():
@@ -197,20 +221,36 @@ def caprelease():
     cv2.destroyAllWindows()
 
 
+def start_cam():
+    MakeupGlobals.video_feed_enabled = True
+    apply_makeup_video()
+
+
+def stop_cam():
+    MakeupGlobals.video_feed_enabled = False
+
+
 def generate():
     # grab global references 
     # global outputFrame
     # loop over frames from the output stream
+    #  Testing
+    # if key == ord("q"):
+    #     break
+
     while True:
         # check if the output frame is available, otherwise skip
         # the iteration of the loop
         if MakeupGlobals.output_frame is None:
             continue
+
+        # cv2.imshow("Frame", MakeupGlobals.output_frame)
+        # key = cv2.waitKey(1) & 0xFF
         # encode the frame in JPEG format
-        (flag, encodedImage) = cv2.imencode(".jpg", MakeupGlobals.output_frame)
+        (flag, encodedImage) = cv2.imencode(".png", MakeupGlobals.output_frame)
         # ensure the frame was successfully encoded
         if not flag:
             continue
         # yield the output frame in the byte format
-        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
+        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
                bytearray(encodedImage) + b'\r\n')

@@ -14,6 +14,7 @@ import time
 import imutils
 from flask import Flask, render_template, url_for, request, Response
 import dlib
+import threading
 
 import src.tints.cv.makeup.utils as mutils
 
@@ -37,7 +38,7 @@ def before_request():
 # ------------------------------ depracated ----------------------
 @simulation.route('/api/test/simulation')
 def test_simulation():
-    return ("Success get simulation api call", 200)
+    return "Success get simulation api call", 200
 
 
 def get_response_image(image_path):
@@ -85,7 +86,7 @@ def simulator_lip():
         encoded_img.append(get_response_image(
             '{}/{}'.format(SIMULATOR_OUTPUT, image_path)))
 
-    return (JSONEncoder().encode(encoded_img), 200)
+    return JSONEncoder().encode(encoded_img), 200
 
 
 @simulation.route('/api/simulator/blush', methods=['POST'])
@@ -121,7 +122,7 @@ def simulator_value():
         encoded_img.append(get_response_image(
             '{}/{}'.format(SIMULATOR_OUTPUT, image_path)))
 
-    return (JSONEncoder().encode(encoded_img), 200)
+    return JSONEncoder().encode(encoded_img), 200
     # return send_from_directory(
     #     SIMULATOR_OUTPUT,
     #     predict_result_medium,
@@ -161,7 +162,7 @@ def foundation_value():
         encoded_img.append(get_response_image(
             '{}/{}'.format(SIMULATOR_OUTPUT, image_path)))
 
-    return (JSONEncoder().encode(encoded_img), 200)
+    return JSONEncoder().encode(encoded_img), 200
     return send_from_directory(
         SIMULATOR_OUTPUT,
         predict_result_medium,
@@ -174,7 +175,8 @@ def foundation_value():
 @simulation.route('/api/opencam', methods=['GET'])
 @cross_origin()
 def opencam():
-    mutils.opencam()
+    t = threading.Thread(target=mutils.opencam, daemon=True)
+    t.start()
     return "Success opening cam", 200
 
 
@@ -196,15 +198,27 @@ def video_feed():
                     mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
-@simulation.route('/api/video/eyeshadow', methods=['POST'])
+@simulation.route('/api/simulator/video/eyeshadow', methods=['POST'])
 @cross_origin()
 def video_eyeshadow():
-    r_value = request.form.get('r_value')
-    g_value = request.form.get('g_value')
-    b_value = request.form.get('b_value')
-    mutils.handle_makeup_state('eyeshadow', r_value, g_value, b_value)
+    # r_value = request.form.get('r_value')
+    # g_value = request.form.get('g_value')
+    # b_value = request.form.get('b_value')
+    # mutils.handle_makeup_state('eyeshadow', r_value, g_value, b_value)
+    mutils.handle_makeup_state('blush', 237, 29, 36, .3)
+
     print("video feed eyeshadow")
     return "eyeshadow"
+
+
+@simulation.route('/api/test/blush', methods=['GET'])
+def blush():
+    mutils.handle_makeup_state('blush', 130, 197, 81, .6)
+
+
+@simulation.route('/api/test/eye', methods=['GET'])
+def eye():
+    mutils.handle_makeup_state('eyeshadow', 237, 29, 36, .3)
 
 
 # This method executes after every API request.
