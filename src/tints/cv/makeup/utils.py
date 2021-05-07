@@ -180,6 +180,15 @@ def enable_makeup(makeup_state, r=0, g=0, b=0, intensity=.7):
         Globals.makeup_workers['blush_worker'][2] = True
 
 
+def disable_makeup(makeup_state):
+    if makeup_state == 'eyeshadow':
+        Globals.makeup_workers['eyeshadow_worker'][2] = False
+    elif makeup_state == 'lipstick':
+        Globals.makeup_workers['lipstick_worker'][2] = False
+    elif makeup_state == 'blush':
+        Globals.makeup_workers['blush_worker'][2] = False
+
+
 # def handle_makeup_video(frame, landmarks_x, landmarks_y):
 #     print("testing handle makeup")
 #     # global r_eye, g_eye, b_eye

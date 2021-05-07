@@ -61,6 +61,7 @@ def simulator_lip():
         landmarks_x.append(pose_landmarks.part(i).x)
         landmarks_y.append(pose_landmarks.part(i).y)
 
+    print("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",request.form.to_dict())
     r_value = request.form.get('r_value')
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')

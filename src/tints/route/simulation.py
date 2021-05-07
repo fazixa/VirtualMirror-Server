@@ -201,14 +201,19 @@ def video_feed():
 @simulation.route('/api/simulator/video/eyeshadow', methods=['POST'])
 @cross_origin()
 def video_eyeshadow():
-    # r_value = request.form.get('r_value')
-    # g_value = request.form.get('g_value')
-    # b_value = request.form.get('b_value')
-    # mutils.handle_makeup_state('eyeshadow', r_value, g_value, b_value)
-    mutils.handle_makeup_state('blush', 237, 29, 36, .3)
+    r_value = request.form.get('r_value')
+    g_value = request.form.get('g_value')
+    b_value = request.form.get('b_value')
+    mutils.enable_makeup('eyeshadow', r_value, g_value, b_value)
+    return ("eyeshadow", 200)
 
-    print("video feed eyeshadow")
-    return "eyeshadow"
+@simulation.route('/api/video/no_eyeshadow', methods=['GET'])
+@cross_origin()
+def video_no_eyeshadow():
+    mutils.disable_makeup('eyeshadow')
+    print("eye off")
+    return ("eyeshadow off", 200)
+
 
 
 @simulation.route('/api/test/blush', methods=['GET'])
