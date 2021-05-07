@@ -11,18 +11,6 @@ from multiprocessing import Process
 app = Flask(__name__, template_folder='templates')
 
 
-# def gen_frames():
-#     while True:
-#         success, frame = camera.read()  # read the camera frame
-#         if not success:
-#             break
-#         else:
-#             ret, buffer = cv2.imencode('.jpg', frame)
-#             frame = buffer.tobytes()
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
-
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -30,8 +18,7 @@ def index():
 
 @app.route('/open-cam', methods=['POST'])
 def open_cam():
-    # t = threading.Thread(target=mutils.start_cam, daemon=True)
-    # t.start()
+    mutils.start_cam()
     return "Success opening cam", 200
 
 
@@ -43,25 +30,22 @@ def close_cam():
 
 @app.route('/video-feed')
 def video_feed():
-    # return the response generated along with the specific media
-    # type (mime type)
-    print("video feed")
     return Response(mutils.apply_makeup_video(),
                     mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
 @app.route('/blush')
 def blush():
-    mutils.handle_makeup_state('blush', 130, 197, 81, .6)
+    mutils.enable_makeup('blush', 130, 197, 81, .6)
     return 'ok'
 
 
 @app.route('/eyeshadow')
 def eyeshadow():
-    mutils.handle_makeup_state('eyeshadow', 130, 197, 81, .6)
+    mutils.enable_makeup('eyeshadow', 130, 197, 81, .6)
     return 'ok'
 
 
 if __name__ == '__main__':
-    mutils.MakeupGlobals.cap = cv2.VideoCapture(0)
+    mutils.Globals.cap = cv2.VideoCapture(0)
     app.run(debug=True)

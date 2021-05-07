@@ -19,11 +19,11 @@ class Color:
         return str({'r': self.r, 'g': self.g, 'b': self.b, 'intensity': self.intensity})
 
 
-class MakeupGlobals:
+class Globals:
     def __init__(self):
         pass
 
-    cap = None
+    cap = cv2.VideoCapture()
     # r_value = None
     # g_value = None
     # b_value = None
@@ -64,18 +64,9 @@ def blush_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, out_
     })
 
 
-# MakeupGlobals.makeup_workers.append(eyeshadow_worker)
-# MakeupGlobals.makeup_workers.append(blush_worker)
-def toggle_makeup_worker(worker_func) -> None:
-    if MakeupGlobals.makeup_workers[worker_func.__name__][2]:
-        MakeupGlobals.makeup_workers[worker_func.__name__][2] = False
-    else:
-        MakeupGlobals.makeup_workers[worker_func.__name__][2] = True
-
-
-MakeupGlobals.makeup_workers = {
-    'eyeshadow_worker': [eyeshadow_worker, MakeupGlobals.eye_color, False],
-    'blush_worker': [blush_worker, MakeupGlobals.blush_color, False],
+Globals.makeup_workers = {
+    'eyeshadow_worker': [eyeshadow_worker, Globals.eye_color, False],
+    'blush_worker': [blush_worker, Globals.blush_color, False],
 }
 
 
@@ -83,8 +74,8 @@ def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
     threads = []
     shared_queue = []
 
-    for makeup_worker in MakeupGlobals.makeup_workers:
-        worker = MakeupGlobals.makeup_workers[makeup_worker]
+    for makeup_worker in Globals.makeup_workers:
+        worker = Globals.makeup_workers[makeup_worker]
 
         if worker[2]:
             t = threading.Thread(target=worker[0],
@@ -116,28 +107,21 @@ def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
 
 
 def apply_makeup_video():
-    # global cap, outputFrame, eyeshadow_state, r_value, b_value, g_value
-    prev = 0
-    frame_rate = 15
-    # _, frame = MakeupGlobals.cap.read()
+    if not Globals.video_feed_enabled: return Globals.output_frame
+
     while True:
-        if not MakeupGlobals.video_feed_enabled:
-            break
-        ret, frame = MakeupGlobals.cap.read()
-        MakeupGlobals.output_frame = frame
-        time_elapsed = time.time() - prev
+        _, frame = Globals.cap.read()
+        Globals.output_frame = frame
         frame = imutils.resize(frame, width=700)
 
-        # if time_elapsed > 1. / frame_rate:
-        prev = time.time()
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        detected_faces = MakeupGlobals.detector(gray, 0)
+        detected_faces = Globals.detector(gray, 0)
         landmarks_x = []
         landmarks_y = []
-        # try:
+
         for face in detected_faces:
-            pose_landmarks = MakeupGlobals.face_pose_predictor(gray, face)
+            pose_landmarks = Globals.face_pose_predictor(gray, face)
             for i in range(68):
                 landmarks_x.append(pose_landmarks.part(i).x)
                 landmarks_y.append(pose_landmarks.part(i).y)
@@ -155,102 +139,106 @@ def apply_makeup_video():
                     bytearray(encodedImage) + b'\r\n')
             
             else:
-                (flag, encodedImage) = cv2.imencode(".png", MakeupGlobals.output_frame)
+                (flag, encodedImage) = cv2.imencode(".png", Globals.output_frame)
                 # ensure the frame was successfully encoded
                 if not flag:
                     continue
                 # yield the output frame in the byte format
                 yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
                     bytearray(encodedImage) + b'\r\n')
-            # if filter_res is not None:
-            #     MakeupGlobals.output_frame = filter_res
-
-                # Testing
-                # cv2.imshow("Frame", MakeupGlobals.output_frame)
-                # key = cv2.waitKey(1) & 0xFF
-                # if key == ord("q"):
-                #     break
-            # except Exception as e:
-            #     print(e)
 
 
-def handle_makeup_state(makeup_state, r=0, g=0, b=0, intensity=.7):
-    # global eyeshadow_state, r_eye, g_eye, b_eye
-    # global lipstick_state, r_lip, g_lip, b_lip
+# def handle_makeup_state(makeup_state, r=0, g=0, b=0, intensity=.7):
+#     # global eyeshadow_state, r_eye, g_eye, b_eye
+#     # global lipstick_state, r_lip, g_lip, b_lip
+#     if makeup_state == 'eyeshadow':
+#         Globals.makeup_workers['eyeshadow_worker'][1] = Color(r, g, b, intensity)
+#         toggle_makeup_worker(eyeshadow_worker)
+#     # elif makeup_state == 'No_eyeshadow':
+#     #     rm_makeup_worker(eyeshadow_worker)
+#     if makeup_state == 'lipstick':
+#         # Globals.lipstick_state = True
+#         Globals.lip_color = Color(r, g, b, intensity)
+#     # elif makeup_state == 'No_lipstick':
+#     #     Globals.lipstick_state = False
+#     if makeup_state == 'blush':
+#         Globals.makeup_workers['blush_worker'][1] = Color(r, g, b, intensity)
+#         toggle_makeup_worker(blush_worker)
+#     # elif makeup_state == 'No_blush':
+#     #     Globals.blush_state = False
+
+
+def enable_makeup(makeup_state, r=0, g=0, b=0, intensity=.7):
     if makeup_state == 'eyeshadow':
-        MakeupGlobals.makeup_workers['eyeshadow_worker'][1] = Color(r, g, b, intensity)
-        toggle_makeup_worker(eyeshadow_worker)
-    # elif makeup_state == 'No_eyeshadow':
-    #     rm_makeup_worker(eyeshadow_worker)
-    if makeup_state == 'lipstick':
-        # MakeupGlobals.lipstick_state = True
-        MakeupGlobals.lip_color = Color(r, g, b, intensity)
-    # elif makeup_state == 'No_lipstick':
-    #     MakeupGlobals.lipstick_state = False
-    if makeup_state == 'blush':
-        MakeupGlobals.makeup_workers['blush_worker'][1] = Color(r, g, b, intensity)
-        toggle_makeup_worker(blush_worker)
-    # elif makeup_state == 'No_blush':
-    #     MakeupGlobals.blush_state = False
+        Globals.makeup_workers['eyeshadow_worker'][1] = Color(r, g, b, intensity)
+        Globals.makeup_workers['eyeshadow_worker'][2] = True
+    elif makeup_state == 'lipstick':
+        Globals.makeup_workers['lipstick_worker'][1] = Color(r, g, b, intensity)
+        Globals.makeup_workers['lipstick_worker'][2] = True
+    elif makeup_state == 'blush':
+        Globals.makeup_workers['blush_worker'][1] = Color(r, g, b, intensity)
+        Globals.makeup_workers['blush_worker'][2] = True
 
 
-def handle_makeup_video(frame, landmarks_x, landmarks_y):
-    print("testing handle makeup")
-    # global r_eye, g_eye, b_eye
-    # if MakeupGlobals.eyeshadow_state:
-    #     MakeupGlobals.makeup_workers.append((eyeshadow_worker, MakeupGlobals.eye_color))
+# def handle_makeup_video(frame, landmarks_x, landmarks_y):
+#     print("testing handle makeup")
+#     # global r_eye, g_eye, b_eye
+#     # if Globals.eyeshadow_state:
+#     #     Globals.makeup_workers.append((eyeshadow_worker, Globals.eye_color))
 
-    MakeupGlobals.output_frame = join_makeup_workers(frame, landmarks_x, landmarks_y)
-    # if \
-    # len(MakeupGlobals.makeup_workers) > 0 else frame
-
-
-def opencam():
-    # global cap, frame_rate, prev
-    print("[INFO] camera sensor warming up...")
-    MakeupGlobals.cap = cv2.VideoCapture(0)
-    # time.sleep(2.0)
-    # MakeupGlobals.eyeshadow_state = False
-    apply_makeup_video()
-    # threading.Thread(target=apply_makeup_video, daemon=True).start()
+#     Globals.output_frame = join_makeup_workers(frame, landmarks_x, landmarks_y)
+#     # if \
+#     # len(Globals.makeup_workers) > 0 else frame
 
 
-def caprelease():
-    # global cap
-    MakeupGlobals.cap.release()
-    cv2.destroyAllWindows()
+# def opencam():
+#     # global cap, frame_rate, prev
+#     print("[INFO] camera sensor warming up...")
+#     Globals.cap = cv2.VideoCapture(0)
+#     # time.sleep(2.0)
+#     # Globals.eyeshadow_state = False
+#     apply_makeup_video()
+#     # threading.Thread(target=apply_makeup_video, daemon=True).start()
+
+
+# def caprelease():
+#     # global cap
+#     Globals.cap.release()
+#     cv2.destroyAllWindows()
+
 
 
 def start_cam():
-    MakeupGlobals.video_feed_enabled = True
-    apply_makeup_video()
+    Globals.cap.open(1)
+    Globals.video_feed_enabled = True
 
 
 def stop_cam():
-    MakeupGlobals.video_feed_enabled = False
+    Globals.video_feed_enabled = False
+    Globals.cap.release()
 
 
-def generate():
-    # grab global references 
-    # global outputFrame
-    # loop over frames from the output stream
-    #  Testing
-    # if key == ord("q"):
-    #     break
+# def generate():
+#     # grab global references 
+#     # global outputFrame
+#     # loop over frames from the output stream
+#     #  Testing
+#     # if key == ord("q"):
+#     #     break
 
-    while True:
-        # check if the output frame is available, otherwise skip
-        # the iteration of the loop
-        if MakeupGlobals.output_frame is None:
-            continue
+#     while True:
+#         # check if the output frame is available, otherwise skip
+#         # the iteration of the loop
+#         if Globals.output_frame is None:
+#             continue
 
-        # cv2.imshow("Frame", MakeupGlobals.output_frame)
-        # key = cv2.waitKey(1) & 0xFF
-        # encode the frame in JPEG format
-        (flag, encodedImage) = cv2.imencode(".png", MakeupGlobals.output_frame)
-        # ensure the frame was successfully encoded
-        if not flag:
-            continue
-        # yield the output frame in the byte format
-        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-               bytearray(encodedImage) + b'\r\n')
+#         # cv2.imshow("Frame", Globals.output_frame)
+#         # key = cv2.waitKey(1) & 0xFF
+#         # encode the frame in JPEG format
+#         (flag, encodedImage) = cv2.imencode(".png", Globals.output_frame)
+#         # ensure the frame was successfully encoded
+#         if not flag:
+#             continue
+#         # yield the output frame in the byte format
+#         yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+#                bytearray(encodedImage) + b'\r\n')

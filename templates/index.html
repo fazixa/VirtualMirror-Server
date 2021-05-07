@@ -14,12 +14,6 @@
 </head>
 <body>
 <div class="container">
-    <div class="row">
-        <div class="col-lg-8  offset-lg-2" id="container">
-            <h3 class="mt-5">Live Streaming</h3>
-        </div>
-    </div>
-    <br>
     <div class="d-flex justify-content-evenly">
         <button type="button" class="btn btn-outline-dark" onclick="openCam()">Open Cam</button>
         <button type="button" class="btn btn-outline-dark" onclick="closeCam()">Close Cam</button>
@@ -28,6 +22,12 @@
     <div class="d-flex justify-content-evenly">
         <button type="button" class="btn btn-outline-dark" onclick="blush()">Blush</button>
         <button type="button" class="btn btn-outline-dark" onclick="eyeshadow()">Eyeshadow</button>
+    </div>
+    <div class="row">
+        <div class="col-lg-8  offset-lg-2" id="container">
+            <h3 class="mt-5">Live Streaming</h3>
+            <img id="vid-feed" src="/video-feed" width="100%" alt="video-feed"></img>
+        </div>
     </div>
 </div>
 </body>
