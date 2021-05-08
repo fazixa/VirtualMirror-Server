@@ -218,7 +218,7 @@ def disable_makeup(makeup_state):
 
 
 def start_cam():
-    Globals.cap.open(1)
+    Globals.cap.open(0)
     Globals.video_feed_enabled = True
 
 

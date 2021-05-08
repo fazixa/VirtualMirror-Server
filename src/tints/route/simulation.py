@@ -175,44 +175,39 @@ def foundation_value():
 @simulation.route('/api/opencam', methods=['GET'])
 @cross_origin()
 def opencam():
-    t = threading.Thread(target=mutils.opencam, daemon=True)
-    t.start()
+    mutils.start_cam()
     return "Success opening cam", 200
 
 
 @simulation.route('/api/closecam', methods=['GET'])
 @cross_origin()
-def caprelease():
-    mutils.caprelease()
-    print("cap released")
-    return "Success closing cam", 200
+def close_cam():
+    mutils.stop_cam()
+    return 'Cam closed'
 
 
 @simulation.route('/api/video_feed', methods=['GET'])
 @cross_origin()
 def video_feed():
-    # return the response generated along with the specific media
-    # type (mime type)
-    print("video feed")
-    return Response(mutils.generate(),
+    return Response(mutils.apply_makeup_video(),
                     mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
-@simulation.route('/api/simulator/video/eyeshadow', methods=['POST'])
+@simulation.route('/api/video/<makeup_type>', methods=['POST'])
 @cross_origin()
-def video_eyeshadow():
+def video_eyeshadow(makeup_type):
     r_value = request.form.get('r_value')
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')
-    mutils.enable_makeup('eyeshadow', r_value, g_value, b_value)
-    return ("eyeshadow", 200)
+    mutils.enable_makeup('makeup_type', r_value, g_value, b_value)
+    return (makeup_type, 200)
 
-@simulation.route('/api/video/no_eyeshadow', methods=['GET'])
+@simulation.route('/api/video_off/<makeup_type>', methods=['GET'])
 @cross_origin()
-def video_no_eyeshadow():
-    mutils.disable_makeup('eyeshadow')
-    print("eye off")
-    return ("eyeshadow off", 200)
+def video_no_eyeshadow(makeup_type):
+    mutils.disable_makeup(makeup_type)
+    print(makeup_type, "off")
+    return ("off", 200)
 
 
 
