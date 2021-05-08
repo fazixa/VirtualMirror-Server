@@ -14,20 +14,18 @@ import time
 import imutils
 from flask import Flask, render_template, url_for, request, Response
 import dlib
+import threading
 
 import src.tints.cv.makeup.utils as mutils
 
-
-
 from src.tints.settings import SHAPE_68_PATH
-
-
 
 simulation = Blueprint('simulation', __name__)
 outputFrame = None
 
 detector = dlib.get_frontal_face_detector()
 face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
+
 
 # This method executes before any API request
 
@@ -36,10 +34,11 @@ face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
 def before_request():
     print('Start Simulation API request')
 
+
 # ------------------------------ depracated ----------------------
 @simulation.route('/api/test/simulation')
 def test_simulation():
-    return("Success get simulation api call", 200)
+    return "Success get simulation api call", 200
 
 
 def get_response_image(image_path):
@@ -50,8 +49,6 @@ def get_response_image(image_path):
     encoded_img = encodebytes(byte_arr.getvalue()).decode(
         'ascii')  # encode as base64
     return encoded_img
-
-
 
 
 @simulation.route('/api/simulator/lip', methods=['POST'])
@@ -80,7 +77,7 @@ def simulator_lip():
     predict_result_fade = eyeshadow_makeup.apply_eyeshadow(
         user_image, r_value, g_value, b_value, 1.2)
     predict_result_intense = eyeshadow_makeup.apply_eyeshadow(
-        user_image, r_value, g_value, b_value,1.3)
+        user_image, r_value, g_value, b_value, 1.3)
 
     result = [predict_result_intense,
               predict_result_medium, predict_result_fade]
@@ -89,7 +86,7 @@ def simulator_lip():
         encoded_img.append(get_response_image(
             '{}/{}'.format(SIMULATOR_OUTPUT, image_path)))
 
-    return (JSONEncoder().encode(encoded_img), 200)
+    return JSONEncoder().encode(encoded_img), 200
 
 
 @simulation.route('/api/simulator/blush', methods=['POST'])
@@ -125,7 +122,7 @@ def simulator_value():
         encoded_img.append(get_response_image(
             '{}/{}'.format(SIMULATOR_OUTPUT, image_path)))
 
-    return (JSONEncoder().encode(encoded_img), 200)
+    return JSONEncoder().encode(encoded_img), 200
     # return send_from_directory(
     #     SIMULATOR_OUTPUT,
     #     predict_result_medium,
@@ -165,11 +162,12 @@ def foundation_value():
         encoded_img.append(get_response_image(
             '{}/{}'.format(SIMULATOR_OUTPUT, image_path)))
 
-    return (JSONEncoder().encode(encoded_img), 200)
+    return JSONEncoder().encode(encoded_img), 200
     return send_from_directory(
         SIMULATOR_OUTPUT,
         predict_result_medium,
         mimetype='image/jpeg')
+
 
 # -----------------------------------------------------------------
 
@@ -177,53 +175,53 @@ def foundation_value():
 @simulation.route('/api/opencam', methods=['GET'])
 @cross_origin()
 def opencam():
-    mutils.opencam()
-    return("Success opening cam", 200)
+    mutils.start_cam()
+    return "Success opening cam", 200
 
 
 @simulation.route('/api/closecam', methods=['GET'])
 @cross_origin()
-def caprelease():
-    mutils.caprelease()
-    print("cap released")
-    return("Success closing cam", 200)
+def close_cam():
+    mutils.stop_cam()
+    return 'Cam closed'
 
 
 @simulation.route('/api/video_feed', methods=['GET'])
 @cross_origin()
 def video_feed():
-    # return the response generated along with the specific media
-    # type (mime type)
-    print("video feed")
-    return Response(mutils.generate(),
-        mimetype = "multipart/x-mixed-replace; boundary=frame")
+    return Response(mutils.apply_makeup_video(),
+                    mimetype="multipart/x-mixed-replace; boundary=frame")
 
-@simulation.route('/api/video/eyeshadow', methods=['POST'])
+
+@simulation.route('/api/video/<makeup_type>', methods=['POST'])
 @cross_origin()
-def video_eyeshadow():
+def video_eyeshadow(makeup_type):
     r_value = request.form.get('r_value')
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')
-    mutils.handle_makeup_on('eyeshadow', r_value, g_value, b_value)
-    return ("eyeshadow", 200)
+    mutils.enable_makeup('makeup_type', r_value, g_value, b_value)
+    return (makeup_type, 200)
 
-@simulation.route('/api/video/no_eyeshadow', methods=['GET'])
+@simulation.route('/api/video_off/<makeup_type>', methods=['GET'])
 @cross_origin()
-def video_no_eyeshadow():
-    mutils.handle_makeup_off('eyeshadow')
-    print("eye off")
-    return ("eyeshadow off", 200)
+def video_no_eyeshadow(makeup_type):
+    mutils.disable_makeup(makeup_type)
+    print(makeup_type, "off")
+    return ("off", 200)
 
 
 
+@simulation.route('/api/test/blush', methods=['GET'])
+def blush():
+    mutils.handle_makeup_state('blush', 130, 197, 81, .6)
 
 
-        
+@simulation.route('/api/test/eye', methods=['GET'])
+def eye():
+    mutils.handle_makeup_state('eyeshadow', 237, 29, 36, .3)
 
 
 # This method executes after every API request.
-
-
 @simulation.after_request
 def after_request(response):
     return response
