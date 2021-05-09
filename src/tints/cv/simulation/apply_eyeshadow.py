@@ -80,7 +80,7 @@ class Eyeshadow(object):
         self.apply_color(x_all, y_all)
         self.apply_blur(x_all, y_all)
 
-        self.im_copy = cv2.cvtColor(self.im_copy, cv2.COLOR_BGR2RGB)
+        # self.im_copy = cv2.cvtColor(self.im_copy, cv2.COLOR_BGR2RGB)
 
         return self.im_copy
 

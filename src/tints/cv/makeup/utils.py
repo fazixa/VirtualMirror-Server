@@ -55,8 +55,8 @@ def eyeshadow_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, 
 
 
 def blush_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, out_queue) -> None:
-    cheeks = blush(w_frame)
-    result = cheeks.apply_blush(w_landmarks_x, w_landmarks_y, r, g, b, intensity)
+    cheeks = blush()
+    result = cheeks.apply_blush(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity)
     result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
     out_queue.append({
         'image': result,

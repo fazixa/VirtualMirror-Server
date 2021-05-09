@@ -8,6 +8,7 @@ from src.tints.db.database import DB
 
 from src.tints.route.simulation import *
 from src.tints.route.eyeshadow import *
+from src.tints.route.blush import *
 from src.tints.route.auth import *
 
 # Load environment config from .env file
@@ -30,6 +31,7 @@ port = int(os.environ.get('PORT', 5000))
 
 app.register_blueprint(simulation)
 app.register_blueprint(eyeshadow)
+app.register_blueprint(blushr)
 app.register_blueprint(auth)
 
 # Start connect to MongoDB

@@ -199,7 +199,8 @@ def video_eyeshadow(makeup_type):
     r_value = request.form.get('r_value')
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')
-    mutils.enable_makeup('makeup_type', r_value, g_value, b_value)
+    print(makeup_type)
+    mutils.enable_makeup(makeup_type, r_value, g_value, b_value)
     return (makeup_type, 200)
 
 @simulation.route('/api/video_off/<makeup_type>', methods=['GET'])

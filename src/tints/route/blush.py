@@ -6,7 +6,7 @@ from flask_cors import cross_origin
 from PIL import Image
 from base64 import encodebytes
 from src.tints.utils.json_encode import JSONEncoder
-from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
+from src.tints.cv.simulation.apply_blush import blush
 from src.tints.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
 import time
@@ -15,14 +15,14 @@ from flask import Flask, render_template, url_for, request, Response
 import dlib
 from src.tints.settings import SHAPE_68_PATH
 
-eyeshadow = Blueprint('eyeshadow', __name__)
+blushr = Blueprint('blushr', __name__)
 
 detector = dlib.get_frontal_face_detector()
 face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
 # This method executes before any API request
 
 
-@eyeshadow.before_request
+@blushr.before_request
 def before_request():
     print('Start eyeshadow API request')
 
@@ -38,7 +38,7 @@ def get_response_image(image_path):
     return encoded_img
 
 # ------------------------------------ non general
-@eyeshadow.route('/api/makeup/image/eyeshadow', methods=['POST'])
+@blushr.route('/api/makeup/image/blush', methods=['POST'])
 @cross_origin()
 def simulator_lip():
     # check if the post request has the file part
@@ -51,7 +51,6 @@ def simulator_lip():
     image_copy_name = 'simulated_image-{}.jpg'.format(str(user_id))
     user_image.save(os.path.join(SIMULATOR_INPUT, image_copy_name))
     user_image = skimage_io.imread(os.path.join(SIMULATOR_INPUT, image_copy_name))
-    
     detected_faces = detector(user_image, 0)
     pose_landmarks = face_pose_predictor(user_image, detected_faces[0])
 
@@ -65,22 +64,22 @@ def simulator_lip():
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')
 
-    eyeshadow_makeup = Eyeshadow()
+    blush_makeup = blush()
     
-    img = eyeshadow_makeup.apply_eyeshadow(
-        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value, 1)
+    img = blush_makeup.apply_blush(
+        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value, 1.5)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    predict_result_intense = save_iamge(img,r_value,g_value,b_value,"eyeshadow",1)
+    predict_result_intense = save_iamge(img,r_value,g_value,b_value,"blush",1.5)
 
-    img = eyeshadow_makeup.apply_eyeshadow(
-        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value, 1.2)
+    img = blush_makeup.apply_blush(
+        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.4)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    predict_result_medium = save_iamge(img,r_value,g_value,b_value,"eyeshadow",1.2)
+    predict_result_medium = save_iamge(img,r_value,g_value,b_value,"blush",0.4)
 
-    img = eyeshadow_makeup.apply_eyeshadow(
-        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value,1.3)
+    img = blush_makeup.apply_blush(
+        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value,0.1)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    predict_result_fade = save_iamge(img,r_value,g_value,b_value,"eyeshadow",1.3)
+    predict_result_fade = save_iamge(img,r_value,g_value,b_value,"blush",0.1)
 
     result = [predict_result_intense,
               predict_result_medium, predict_result_fade]
