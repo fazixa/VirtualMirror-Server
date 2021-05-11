@@ -40,6 +40,16 @@ let eyeshadow = () => {
         })
 }
 
+let lipstick = () => {
+    axios.get('/lipstick')
+        .then(res => {
+            console.log(res)
+        })
+        .catch(err => {
+            console.log(err)
+        })
+}
+
 setInterval(() => {
     $('#vid-feed').attr("src", "/video-feed?" + new Date().getTime())
 }, 1000);

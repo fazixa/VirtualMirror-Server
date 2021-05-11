@@ -1,39 +1,34 @@
-from src.tints.cv.makeup.utils import opencam, handle_makeup_state
-import time
-import threading
+# from src.tints.cv.makeup.utils import Color
+# import time
 
-if __name__ == '__main__':
-    t = threading.Thread(target=opencam, daemon=True)
-    t.start()
-    # t.join()
+# def spread(a, b, c):
+#     res = a + b + c
 
-    # while True:
-    #     pass
-    # time.sleep(5)
+# a = [1, 2, 3]
 
-    # handle_makeup_state('blush', 130, 197, 81, .6)
-    # time.sleep(5)
-    while True:
-        pass
+# # t = time.time()
+# print(time.time())
+# for _ in range(100000):
+#     spread(*a)
+# print(time.time())
 
+# # print(time.time() - t)
 
-    # handle_makeup_state('eyeshadow', 237, 29, 36, .3)
-    # time.sleep(5)
-    #
-    # handle_makeup_state('blush')
-    # time.sleep(5)
-    #
-    # handle_makeup_state('eyeshadow')
-    # time.sleep(5)
+# # t = time.time()
+# print(time.time())
 
-    # threading.Thread(target=handle_makeup_state, args=('No_eyeshadow', 10, 10, 100)).start()
+# for _ in range(100000):
+#     spread(a[0], a[1], a[2])
+# print(time.time())
 
-# a = {}
-#
-#
-# def test():
-#     print('Hi')
-#
-#
-# if __name__ == '__main__':
-#     print(len(a))
+# print(time.time() - t)
+import cv2
+import src.tints.cv.makeup.utils as mutils
+
+mutils.start_cam()
+mutils.enable_makeup('blush', 130, 197, 81, .6)
+mutils.enable_makeup('eyeshadow', 130, 197, 81, .6)
+mutils.enable_makeup('lipstick', 200, 10, 20, gloss=True)
+while True:
+    cv2.imshow("Frame", mutils.apply_makeup_video())
+    key = cv2.waitKey(1) & 0xFF
