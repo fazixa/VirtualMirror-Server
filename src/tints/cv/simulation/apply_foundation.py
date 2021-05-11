@@ -30,13 +30,11 @@ class foundation(object):
         # Original image
        
         # All the changes will be applied to im_copy
-      
-       
         self.x_all = []
         self.y_all = []
 
 
-    def apply_foundation(self, landmark_x, landmark_y, landmark_x68,landmark_y68, img, r_value, g_value, b_value, ksize_h, ksize_w, intensity):
+    def apply_foundation(self, img, landmark_x, landmark_y, landmark_x68,landmark_y68, r_value, g_value, b_value, ksize_h, ksize_w, intensity):
         self.red_b = int(r_value)
         self.green_b = int(g_value)
         self.blue_b = int(b_value)
@@ -74,6 +72,8 @@ class foundation(object):
         self.__fill_blush_color(intensity)
         self.__smoothen_blush(face_top_x, face_top_y, ksize_h, ksize_w)
 
+        self.x_all = face_top_x
+        self.y_all = face_top_y
 
         self.image_copy = cv2.cvtColor(
             self.image_copy, cv2.COLOR_BGR2RGB)

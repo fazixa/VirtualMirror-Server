@@ -1,13 +1,13 @@
 import cv2
 import imutils
 import dlib
-import time
-from src.tints.settings import SHAPE_68_PATH
 import threading
+from src.tints.settings import SHAPE_68_PATH, SHAPE_81_PATH
 from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
 from src.tints.cv.simulation.apply_blush import blush
 from src.tints.cv.simulation.apply_lipstick import lipstick
-
+from src.tints.cv.simulation.apply_concealer import concealer
+from src.tints.cv.simulation.apply_foundation import foundation
 
 class Color:
     def __init__(self, r=0, g=0, b=0, intensity=.7):
@@ -24,26 +24,24 @@ class Color:
 
 
 class Globals:
-    def __init__(self):
-        pass
-
-    cap = cv2.VideoCapture()
+    landmarks = {}
     makeup_workers = {}
+    camera_index = 0
     output_frame = None
-    lip_color = Color()
-    eye_color = Color()
-    blush_color = Color()
-    blush_state = False
-    lipstick_state = False
-    eyeshadow_state = False
-    detector = dlib.get_frontal_face_detector()
-    face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
     video_feed_enabled = False
+    cap = cv2.VideoCapture()
+    detector = dlib.get_frontal_face_detector()
+    face_pose_predictor_68 = dlib.shape_predictor(SHAPE_68_PATH)
+    face_pose_predictor_81 = dlib.shape_predictor(SHAPE_81_PATH)
 
 
-def eyeshadow_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, out_queue) -> None:
+def eyeshadow_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     eyes = Eyeshadow()
-    result = eyes.apply_eyeshadow(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity)
+    result = eyes.apply_eyeshadow(
+        w_frame,
+        Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
+        r, g, b, intensity
+    )
     result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
     out_queue.append({
         'image': result,
@@ -51,9 +49,13 @@ def eyeshadow_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, 
     })
 
 
-def blush_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, out_queue) -> None:
+def blush_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     cheeks = blush()
-    result = cheeks.apply_blush(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity)
+    result = cheeks.apply_blush(
+        w_frame,
+        Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
+        r, g, b, intensity
+    )
     result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
     out_queue.append({
         'image': result,
@@ -61,9 +63,12 @@ def blush_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, out_
     })
 
 
-def lipstick_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, l_type, gloss, out_queue) -> None:
+def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> None:
     lip = lipstick(w_frame)
-    result = lip.apply_lipstick(w_landmarks_x, w_landmarks_y, r, g, b, l_type, gloss)
+    result = lip.apply_lipstick(
+        Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
+        r, g, b, l_type, gloss
+    )
     result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
     out_queue.append({
         'image': result,
@@ -71,10 +76,41 @@ def lipstick_worker(w_frame, w_landmarks_x, w_landmarks_y, r, g, b, intensity, l
     })
 
 
+def concealer_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
+    face_con = concealer()
+    result = face_con.apply_blush(
+        w_frame,
+        Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
+        r, g, b, k_h, k_w, intensity)
+    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+    out_queue.append({
+        'image': result,
+        'range': (face_con.x_all, face_con.y_all)
+    })
+
+
+def foundation_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
+    face_foundation = foundation()
+    result = face_foundation.apply_foundation(
+        w_frame,
+        Globals.landmarks['81_landmarks_x'], Globals.landmarks['81_landmarks_y'],
+        Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
+        r, g, b, k_h, k_w, intensity
+    )
+    
+    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+    out_queue.append({
+        'image': result,
+        'range': (face_foundation.x_all, face_foundation.y_all)
+    })
+
+
 Globals.makeup_workers = {
-    'eyeshadow_worker': [eyeshadow_worker, [*Globals.eye_color.values()], False],
-    'blush_worker': [blush_worker, [*Globals.blush_color.values()], False],
-    'lipstick_worker': [lipstick_worker, [*Globals.lip_color.values(), False], False],
+    'eyeshadow_worker':     { 'function': eyeshadow_worker,     'args': [], 'enabled': False },
+    'blush_worker':         { 'function': blush_worker,         'args': [], 'enabled': False },
+    'lipstick_worker':      { 'function': lipstick_worker,      'args': [], 'enabled': False },
+    'concealer_worker':     { 'function': concealer_worker,     'args': [], 'enabled': False },
+    'foundation_worker':    { 'function': foundation_worker,    'args': [], 'enabled': False },
 }
 
 
@@ -85,9 +121,9 @@ def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
     for makeup_worker in Globals.makeup_workers:
         worker = Globals.makeup_workers[makeup_worker]
 
-        if worker[2]:
-            t = threading.Thread(target=worker[0],
-                                 args=(w_frame, w_landmarks_x, w_landmarks_y, *worker[1], shared_queue),
+        if worker['enabled']:
+            t = threading.Thread(target=worker['function'],
+                                 args=(w_frame, *worker['args'], shared_queue),
                                  daemon=True)
             threads.append(t)
 
@@ -128,14 +164,29 @@ def apply_makeup_video():
         landmarks_y = []
 
         for face in detected_faces:
-            pose_landmarks = Globals.face_pose_predictor(gray, face)
+            pose_landmarks = Globals.face_pose_predictor_68(gray, face)
             for i in range(68):
                 landmarks_x.append(pose_landmarks.part(i).x)
                 landmarks_y.append(pose_landmarks.part(i).y)
 
+            Globals.landmarks['68_landmarks_x'] = landmarks_x
+            Globals.landmarks['68_landmarks_y'] = landmarks_y
+
+            if Globals.makeup_workers['foundation_worker']['enabled']:
+                pose_landmarks = Globals.face_pose_predictor_81(gray, face)
+                for i in range(81):
+                    landmarks_x.append(pose_landmarks.part(i).x)
+                    landmarks_y.append(pose_landmarks.part(i).y)
+
+                Globals.landmarks['81_landmarks_x'] = landmarks_x
+                Globals.landmarks['81_landmarks_y'] = landmarks_y
+
             filter_res = join_makeup_workers(frame2, landmarks_x, landmarks_y)
 
             final_result = filter_res if filter_res is not None else Globals.output_frame
+
+            # The following line is for testing with cv2 imshow
+            # return final_result
 
             (flag, encodedImage) = cv2.imencode(".png", final_result)
             
@@ -148,29 +199,39 @@ def apply_makeup_video():
 
 
 
-def enable_makeup(makeup_state, r=0, g=0, b=0, intensity=.7, gloss=False):
+def enable_makeup(makeup_state, r=0, g=0, b=0, intensity=.7, lipstick_type='hard', gloss=False, k_h=81, k_w=81):
     if makeup_state == 'eyeshadow':
-        Globals.makeup_workers['eyeshadow_worker'][1] = [*Color(r, g, b, intensity).values()]
-        Globals.makeup_workers['eyeshadow_worker'][2] = True
+        Globals.makeup_workers['eyeshadow_worker']['args'] = [*Color(r, g, b, intensity).values()]
+        Globals.makeup_workers['eyeshadow_worker']['enabled'] = True
     elif makeup_state == 'lipstick':
-        Globals.makeup_workers['lipstick_worker'][1] = [*Color(r, g, b, intensity).values(), 'hard', gloss]
-        Globals.makeup_workers['lipstick_worker'][2] = True
+        Globals.makeup_workers['lipstick_worker']['args'] = [*Color(r, g, b, intensity).values(), lipstick_type, gloss]
+        Globals.makeup_workers['lipstick_worker']['enabled'] = True
     elif makeup_state == 'blush':
-        Globals.makeup_workers['blush_worker'][1] = [*Color(r, g, b, intensity).values()]
-        Globals.makeup_workers['blush_worker'][2] = True
+        Globals.makeup_workers['blush_worker']['args'] = [*Color(r, g, b, intensity).values()]
+        Globals.makeup_workers['blush_worker']['enabled'] = True
+    elif makeup_state == 'concealer':
+        Globals.makeup_workers['concealer_worker']['args'] = [*Color(r, g, b, intensity).values(), k_h, k_w]
+        Globals.makeup_workers['concealer_worker']['enabled'] = True
+    elif makeup_state == 'foundation':
+        Globals.makeup_workers['foundation_worker']['args'] = [*Color(r, g, b, intensity).values(), k_h, k_w]
+        Globals.makeup_workers['foundation_worker']['enabled'] = True
 
 
 def disable_makeup(makeup_state):
     if makeup_state == 'eyeshadow':
-        Globals.makeup_workers['eyeshadow_worker'][2] = False
+        Globals.makeup_workers['eyeshadow_worker']['enabled'] = False
     elif makeup_state == 'lipstick':
-        Globals.makeup_workers['lipstick_worker'][2] = False
+        Globals.makeup_workers['lipstick_worker']['enabled'] = False
     elif makeup_state == 'blush':
-        Globals.makeup_workers['blush_worker'][2] = False
+        Globals.makeup_workers['blush_worker']['enabled'] = False
+    elif makeup_state == 'concealer':
+        Globals.makeup_workers['concealer_worker']['enabled'] = False
+    elif makeup_state == 'foundation':
+        Globals.makeup_workers['foundation_worker']['enabled'] = False
 
 
 def start_cam():
-    Globals.cap.open(0)
+    Globals.cap.open(Globals.camera_index)
     Globals.video_feed_enabled = True
 
 

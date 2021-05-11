@@ -55,6 +55,9 @@ class concealer(object):
         self.__fill_blush_color(intensity)
         self.__smoothen_blush(face_top_x, face_top_y, ksize_h, ksize_w)
 
+        self.x_all = face_top_x
+        self.y_all = face_top_y
+
 
         # # file_name = 'lip_output-' + name + '.jpg'
 
