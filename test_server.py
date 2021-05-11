@@ -6,6 +6,7 @@ import cv2
 import atexit
 import src.tints.cv.makeup.utils as mutils
 from multiprocessing import Process
+import atexit
 
 # Initialize the Flask app
 app = Flask(__name__, template_folder='templates')
@@ -45,7 +46,20 @@ def eyeshadow():
     mutils.enable_makeup('eyeshadow', 130, 197, 81, .6)
     return 'ok'
 
+@app.route('/lipstick')
+def lipstick():
+    mutils.enable_makeup('lipstick', 200, 10, 20, gloss=True)
+    return 'ok'
+
+
+def clean_exit():
+    print('Making sure camera is turned off to exit properly.')
+    mutils.stop_cam()
+
+
+atexit.register(clean_exit)
+
 
 if __name__ == '__main__':
-    mutils.Globals.cap = cv2.VideoCapture(0)
+    # mutils.Globals.cap = cv2.VideoCapture(1)
     app.run(debug=True)

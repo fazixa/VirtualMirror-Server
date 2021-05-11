@@ -29,6 +29,8 @@ class lipstick(object):
         self.x = []
         self.y = []
         self.intensitymoist = 0.3
+        self.x_all = []
+        self.y_all = []
 
     def get_lips(self,x, y):
 
@@ -186,7 +188,7 @@ class lipstick(object):
        
         # converting lips part of the original image to LAB color space
         lip_LAB = color.rgb2lab((self.im_copy[x, y] / 255.).reshape(len(x), 1, 3)).reshape(len(x), 3)
-        print(lip_LAB.shape, mask.shape)
+        # print(lip_LAB.shape, mask.shape)
 
         L, A, B = mean(lip_LAB[:, 0]), mean(lip_LAB[:, 1]), mean(lip_LAB[:, 2])
 
@@ -322,7 +324,7 @@ class lipstick(object):
 
         filter = cv2.GaussianBlur(filter,(31,31),0)
 
-        print("hi")
+        # print("hi")
         
 
         # cv2.imshow('gussian', filter)
@@ -394,6 +396,8 @@ class lipstick(object):
         if(lipstick_type == "soft"):
             self.fill_soft(x,y)
 
+        self.x_all = x
+        self.y_all = y
 
         # self.moist(lowerx, lowery, motion,220 , 220, 220)
 
