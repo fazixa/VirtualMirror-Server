@@ -1,6 +1,7 @@
 import cv2
 import imutils
 import dlib
+import time
 import threading
 from src.tints.settings import SHAPE_68_PATH, SHAPE_81_PATH
 from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
@@ -28,6 +29,8 @@ class Globals:
     makeup_workers = {}
     camera_index = 0
     output_frame = None
+    prev_time = 0
+    frame_rate = 60
     video_feed_enabled = False
     cap = cv2.VideoCapture()
     detector = dlib.get_frontal_face_detector()
@@ -42,11 +45,12 @@ def eyeshadow_worker(w_frame, r, g, b, intensity, out_queue) -> None:
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
         r, g, b, intensity
     )
-    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+
     out_queue.append({
         'image': result,
         'range': (eyes.x_all, eyes.y_all)
     })
+    print('eye done')
 
 
 def blush_worker(w_frame, r, g, b, intensity, out_queue) -> None:
@@ -56,11 +60,12 @@ def blush_worker(w_frame, r, g, b, intensity, out_queue) -> None:
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
         r, g, b, intensity
     )
-    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+
     out_queue.append({
         'image': result,
         'range': (cheeks.x_all, cheeks.y_all)
     })
+    print('blush done')
 
 
 def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> None:
@@ -69,11 +74,12 @@ def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> No
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
         r, g, b, l_type, gloss
     )
-    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+
     out_queue.append({
         'image': result,
         'range': (lip.x_all, lip.y_all)
     })
+    print('lip done')
 
 
 def concealer_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
@@ -82,7 +88,7 @@ def concealer_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
         r, g, b, k_h, k_w, intensity)
-    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+
     out_queue.append({
         'image': result,
         'range': (face_con.x_all, face_con.y_all)
@@ -98,7 +104,6 @@ def foundation_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
         r, g, b, k_h, k_w, intensity
     )
     
-    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
     out_queue.append({
         'image': result,
         'range': (face_foundation.x_all, face_foundation.y_all)
@@ -114,7 +119,7 @@ Globals.makeup_workers = {
 }
 
 
-def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
+def join_makeup_workers(w_frame):
     threads = []
     shared_queue = []
 
@@ -134,7 +139,7 @@ def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
 
     if len(shared_queue) > 0:
 
-        final_image = shared_queue.pop()['image']
+        final_image = shared_queue.pop(1)['image']
 
         while len(shared_queue) > 0:
             temp_img = shared_queue.pop()
@@ -144,6 +149,8 @@ def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
             for x, y in zip(range_x, range_y):
                 final_image[x, y] = temp_img[x, y]
 
+        final_image = cv2.cvtColor(final_image, cv2.COLOR_RGB2BGR)
+
         return final_image
 
     return None
@@ -152,10 +159,17 @@ def join_makeup_workers(w_frame, w_landmarks_x, w_landmarks_y):
 def apply_makeup_video():
     if not Globals.video_feed_enabled: return Globals.output_frame
 
+
     while True:
+        time_elapsed = time.time() - Globals.prev_time
+
+        if time_elapsed < 1./Globals.frame_rate:
+            return Globals.output_frame
+
+        Globals.prev_time = time.time()
+
         _, frame = Globals.cap.read()
         Globals.output_frame = frame
-        frame = imutils.resize(frame, width=700)
 
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -164,10 +178,23 @@ def apply_makeup_video():
         landmarks_y = []
 
         for face in detected_faces:
+            x1 = face.left()
+            y1 = face.top()
+            x2 = face.right()
+            y2 = face.bottom()
+
+            cropped_img = frame2[ y1:y2, x1:x2]
+            height, width = frame2.shape[:2]
+            cropped_width = x2-x1
+            cropped_height = y2-y1
+            ratio = 250 / cropped_width
+            new_width = width * ratio
+            cropped_img = imutils.resize(cropped_img, width=250)
+
             pose_landmarks = Globals.face_pose_predictor_68(gray, face)
             for i in range(68):
-                landmarks_x.append(pose_landmarks.part(i).x)
-                landmarks_y.append(pose_landmarks.part(i).y)
+                landmarks_x.append(int(((pose_landmarks.part(i).x) - x1) * ratio))
+                landmarks_y.append(int(((pose_landmarks.part(i).y) - y1) * ratio))
 
             Globals.landmarks['68_landmarks_x'] = landmarks_x
             Globals.landmarks['68_landmarks_y'] = landmarks_y
@@ -175,27 +202,36 @@ def apply_makeup_video():
             if Globals.makeup_workers['foundation_worker']['enabled']:
                 pose_landmarks = Globals.face_pose_predictor_81(gray, face)
                 for i in range(81):
-                    landmarks_x.append(pose_landmarks.part(i).x)
-                    landmarks_y.append(pose_landmarks.part(i).y)
+                    landmarks_x.append(int(((pose_landmarks.part(i).x) - x1) * ratio))
+                    landmarks_y.append(int(((pose_landmarks.part(i).y) - y1) * ratio))
 
                 Globals.landmarks['81_landmarks_x'] = landmarks_x
                 Globals.landmarks['81_landmarks_y'] = landmarks_y
 
-            filter_res = join_makeup_workers(frame2, landmarks_x, landmarks_y)
+            filter_res = join_makeup_workers(cropped_img)
 
-            final_result = filter_res if filter_res is not None else Globals.output_frame
+            if filter_res is not None:                
+                filter_res = imutils.resize(filter_res, width=cropped_width)
+                cheight, cwidth = filter_res.shape[:2]
+                frame[ y1:y1+cheight, x1:x2] = filter_res
+                filter_res = imutils.resize(frame, width=700)
+            else:
+                filter_res = Globals.output_frame
+
+            # if filter_res is None:
+            #     filter_res = Globals.output_frame
 
             # The following line is for testing with cv2 imshow
-            # return final_result
+            return filter_res
 
-            (flag, encodedImage) = cv2.imencode(".png", final_result)
+            # (flag, encodedImage) = cv2.imencode(".png", filter_res)
             
-            # ensure the frame was successfully encoded
-            if not flag:
-                continue
-            # yield the output frame in the byte format
-            yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-                bytearray(encodedImage) + b'\r\n')
+            # # ensure the frame was successfully encoded
+            # if not flag:
+            #     continue
+            # # yield the output frame in the byte format
+            # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+            #     bytearray(encodedImage) + b'\r\n')
 
 
 
