@@ -393,7 +393,7 @@ class lipstick(object):
         self.change_rgb(x,y, r, g, b)
         if(lipstick_type == "hard"):
             self.fill_solids(x,y)
-        if(lipstick_type == "soft"):
+        elif(lipstick_type == "soft"):
             self.fill_soft(x,y)
 
         self.x_all = x
