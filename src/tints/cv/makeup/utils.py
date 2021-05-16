@@ -27,7 +27,7 @@ class Color:
 class Globals:
     landmarks = {}
     makeup_workers = {}
-    camera_index = 0
+    camera_index = 2
     output_frame = None
     prev_time = 0
     frame_rate = 60
@@ -47,6 +47,7 @@ def eyeshadow_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     )
 
     out_queue.append({
+        'index': 1,
         'image': result,
         'range': (eyes.x_all, eyes.y_all)
     })
@@ -62,6 +63,7 @@ def blush_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     )
 
     out_queue.append({
+        'index': 0,
         'image': result,
         'range': (cheeks.x_all, cheeks.y_all)
     })
@@ -76,6 +78,7 @@ def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> No
     )
 
     out_queue.append({
+        'index': 2,
         'image': result,
         'range': (lip.x_all, lip.y_all)
     })
@@ -90,6 +93,7 @@ def concealer_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
         r, g, b, k_h, k_w, intensity)
 
     out_queue.append({
+        'index': 3,
         'image': result,
         'range': (face_con.x_all, face_con.y_all)
     })
@@ -105,6 +109,7 @@ def foundation_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
     )
     
     out_queue.append({
+        'index': 4,
         'image': result,
         'range': (face_foundation.x_all, face_foundation.y_all)
     })
@@ -138,8 +143,11 @@ def join_makeup_workers(w_frame):
             t.join()
 
     if len(shared_queue) > 0:
+        t = time.time()
+        shared_queue = sorted(shared_queue, key=lambda x: x['index'], reverse=True)
+        print(time.time() - t)
 
-        final_image = shared_queue.pop(1)['image']
+        final_image = shared_queue.pop()['image']
 
         while len(shared_queue) > 0:
             temp_img = shared_queue.pop()
