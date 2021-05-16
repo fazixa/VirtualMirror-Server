@@ -226,24 +226,24 @@ def apply_makeup_video():
             else:
                 filter_res = Globals.output_frame
 
-            # if filter_res is None:
-            #     filter_res = Globals.output_frame
+            if filter_res is None:
+                filter_res = Globals.output_frame
 
             # The following line is for testing with cv2 imshow
-            return filter_res
+            # return filter_res
 
-            # (flag, encodedImage) = cv2.imencode(".png", filter_res)
+            (flag, encodedImage) = cv2.imencode(".png", filter_res)
             
-            # # ensure the frame was successfully encoded
-            # if not flag:
-            #     continue
-            # # yield the output frame in the byte format
-            # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-            #     bytearray(encodedImage) + b'\r\n')
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+            # yield the output frame in the byte format
+            yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+                bytearray(encodedImage) + b'\r\n')
 
 
 
-def enable_makeup(makeup_state, r=0, g=0, b=0, intensity=.7, lipstick_type='hard', gloss=False, k_h=81, k_w=81):
+def enable_makeup(makeup_state, r=0, g=0, b=0, intensity=.7, lipstick_type='soft', gloss=False, k_h=81, k_w=81):
     if makeup_state == 'eyeshadow':
         Globals.makeup_workers['eyeshadow_worker']['args'] = [*Color(r, g, b, intensity).values()]
         Globals.makeup_workers['eyeshadow_worker']['enabled'] = True
@@ -257,7 +257,7 @@ def enable_makeup(makeup_state, r=0, g=0, b=0, intensity=.7, lipstick_type='hard
         Globals.makeup_workers['concealer_worker']['args'] = [*Color(r, g, b, intensity).values(), k_h, k_w]
         Globals.makeup_workers['concealer_worker']['enabled'] = True
     elif makeup_state == 'foundation':
-        Globals.makeup_workers['foundation_worker']['args'] = [*Color(r, g, b, intensity).values(), k_h, k_w]
+        Globals.makeup_workers['foundation_worker']['args'] = [*Color(r, g, b, 0.3).values(), k_h, k_w]
         Globals.makeup_workers['foundation_worker']['enabled'] = True
 
 

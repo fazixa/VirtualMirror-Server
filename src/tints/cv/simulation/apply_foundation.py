@@ -40,8 +40,8 @@ class foundation(object):
         self.blue_b = int(b_value)
         self.image = img
         # self.image = cv2.imread('data/input/input.jpg')
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
-        gray_image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+        # self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        # gray_image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
         self.landmark_x = landmark_x
         self.landmark_y = landmark_y
         # shape = self.get_cheek_shape(gray_image)
@@ -75,8 +75,8 @@ class foundation(object):
         self.x_all = face_top_x
         self.y_all = face_top_y
 
-        self.image_copy = cv2.cvtColor(
-            self.image_copy, cv2.COLOR_BGR2RGB)
+        # self.image_copy = cv2.cvtColor(
+        #     self.image_copy, cv2.COLOR_BGR2RGB)
         return self.image_copy
         
 

@@ -194,7 +194,7 @@ class lipstick(object):
 
         # meanLf = sum(sum(np.multiply(lip_LAB[:,:,0], mask))) / sum(mask.reshape(-1, 1))
         # converting the color of the lipstick to LAB
-        L1, A1, B1 = color.rgb2lab(np.array((r / 255., g / 255., b / 255.)).reshape(1, 1, 3)).reshape(3, )
+        L1, A1, B1 = color.rgb2lab(np.array((float(r) / 255.,float(g) / 255., float(b) / 255.)).reshape(1, 1, 3)).reshape(3, )
 
         G = L1 / L
         Op = 0.85
