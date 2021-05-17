@@ -98,7 +98,7 @@ class blush(object):
         val[:, :, 1] = np.clip(val[:, :, 1] + lab[:, :, 1], -127, 128)
         val[:, :, 2] = np.clip(val[:, :, 2] + lab[:, :, 2], -127, 128)
 
-        self.x_all = np.concatenate((x_left, x_right))
-        self.y_all = np.concatenate((y_left, y_right))
+        self.y_all = list(np.concatenate((x_left, x_right)))
+        self.x_all = list(np.concatenate((y_left, y_right)))
 
         self.im_copy = (color.lab2rgb(val) * 255).astype(np.uint8)

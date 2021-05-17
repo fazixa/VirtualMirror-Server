@@ -196,11 +196,20 @@ def video_feed():
 @simulation.route('/api/video/<makeup_type>', methods=['POST'])
 @cross_origin()
 def video_eyeshadow(makeup_type):
-    r_value = request.form.get('r_value')
-    g_value = request.form.get('g_value')
-    b_value = request.form.get('b_value')
     print(makeup_type)
-    mutils.enable_makeup(makeup_type, r_value, g_value, b_value)
+    input_args = [
+        makeup_type,
+        request.form.get('r_value'),
+        request.form.get('g_value'),
+        request.form.get('b_value'),
+        request.form.get('intensity'),
+        request.form.get('l_type'),
+        request.form.get('gloss'),
+        request.form.get('k_h'),
+        request.form.get('k_w')
+    ]
+    makeup_args = {x: y for x, y in zip(mutils.Globals.makeup_args, input_args) if y is not None}
+    mutils.enable_makeup(**makeup_args)
     return (makeup_type, 200)
 
 @simulation.route('/api/video_off/<makeup_type>', methods=['GET'])
