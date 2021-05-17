@@ -43,7 +43,7 @@ class Eyeliner(object):
         # calculating mean of each channel
         L, A, B = mean(lip_LAB[:, 0]), mean(lip_LAB[:, 1]), mean(lip_LAB[:, 2])
         # converting the color of the makeup to LAB
-        L1, A1, B1 = color.rgb2lab(np.array((self.r / 255., self.g / 255., self.b / 255.)).reshape(1, 1, 3)).reshape(
+        L1, A1, B1 = color.rgb2lab(np.array((float(self.r) / 255., float(self.g) / 255., float(self.b) / 255.)).reshape(1, 1, 3)).reshape(
             3, )
         # applying the makeup color on image
         G = L1 / L

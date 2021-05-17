@@ -23,8 +23,8 @@ class concealer(object):
         self.green_b = int(g_value)
         self.blue_b = int(b_value)
         self.image = img
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
-        gray_image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+        # self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        # gray_image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
         # shape = self.get_cheek_shape(gray_image)
         self.image = Image.fromarray(self.image)
         self.image = np.asarray(self.image)
@@ -55,8 +55,8 @@ class concealer(object):
         self.__fill_blush_color(intensity)
         self.__smoothen_blush(face_top_x, face_top_y, ksize_h, ksize_w)
 
-        self.x_all = face_top_x
-        self.y_all = face_top_y
+        self.x_all = face_top_y
+        self.y_all = face_top_x
 
 
         # # file_name = 'lip_output-' + name + '.jpg'

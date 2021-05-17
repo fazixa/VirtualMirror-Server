@@ -29,7 +29,7 @@ class Globals:
     landmarks = {}
     makeup_workers = {}
     makeup_args = []
-    camera_index = 2
+    camera_index = 0
     output_frame = None
     prev_time = 0
     frame_rate = 60
@@ -245,16 +245,16 @@ def apply_makeup_video():
                 filter_res = Globals.output_frame
 
             # The following line is for testing with cv2 imshow
-            return filter_res
+            # return filter_res
 
-            # (flag, encodedImage) = cv2.imencode(".png", filter_res)
+            (flag, encodedImage) = cv2.imencode(".png", filter_res)
             
-            # # ensure the frame was successfully encoded
-            # if not flag:
-            #     continue
-            # # yield the output frame in the byte format
-            # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-            #     bytearray(encodedImage) + b'\r\n')
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+            # yield the output frame in the byte format
+            yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+                bytearray(encodedImage) + b'\r\n')
 
 
 
@@ -293,6 +293,8 @@ def disable_makeup(makeup_type):
         Globals.makeup_workers['concealer_worker']['enabled'] = False
     elif makeup_type == 'foundation':
         Globals.makeup_workers['foundation_worker']['enabled'] = False
+    elif makeup_type == 'eyeliner':
+        Globals.makeup_workers['eyeliner_worker']['enabled'] = False
 
 
 def start_cam():
