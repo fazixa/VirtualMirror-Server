@@ -15,10 +15,10 @@ from skimage import io
 from scipy import interpolate
 
 
-class concealer(object): 
+class Concealer(object): 
 
 
-    def apply_blush(self, img, landmark_x, landmark_y, r_value, g_value, b_value, ksize_h, ksize_w, intensity):
+    def apply_concealer(self, img, landmark_x, landmark_y, r_value, g_value, b_value, ksize_h, ksize_w, intensity):
         self.red_b = int(r_value)
         self.green_b = int(g_value)
         self.blue_b = int(b_value)
@@ -42,8 +42,8 @@ class concealer(object):
         face_bottom_y, left_cheek_x = self.get_interior_points(
             left_cheek_x, face_bottom_y)
 
-        self.__fill_blush_color(intensity)
-        self.__smoothen_blush(left_cheek_x, face_bottom_y, ksize_h, ksize_w)
+        # self.__fill_blush_color(intensity)
+        # self.__smoothen_blush(left_cheek_x, face_bottom_y, ksize_h, ksize_w)
 
         indices_right = [15, 14, 13, 12, 54, 35, 45]
         face_top_x = [landmark_x[i] for i in indices_right]
@@ -53,11 +53,11 @@ class concealer(object):
         face_top_y, face_top_x = self.get_interior_points(
             face_top_x, face_top_y)
         self.__fill_blush_color(intensity)
-        self.__smoothen_blush(face_top_x, face_top_y, ksize_h, ksize_w)
+        self.__smoothen_blush(face_top_x, face_top_y, left_cheek_x, face_bottom_y, ksize_h, ksize_w)
 
-        self.x_all = face_top_x
-        self.y_all = face_top_y
 
+        self.x_all = np.concatenate((face_top_y, face_bottom_y))
+        self.y_all = np.concatenate((face_top_x, left_cheek_x))
 
         # # file_name = 'lip_output-' + name + '.jpg'
 
@@ -116,7 +116,7 @@ class concealer(object):
             val.reshape(self.height, self.width, 3)) * 255
         # self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
 
-    def __smoothen_blush(self, x, y, ksize_h, ksize_w):
+    def __smoothen_blush(self, x_right, y_right, x_left, y_left, ksize_h, ksize_w):
         # imgBase = np.zeros((self.height, self.height))
         # cv2.fillConvexPoly(imgBase, np.array(np.c_[x, y], dtype='int32'), 1)
         # imgMask = cv2.GaussianBlur(imgBase, (81, 81), 0)
@@ -131,9 +131,13 @@ class concealer(object):
 
         img_base = np.zeros((self.height, self.width))
         cv2.fillConvexPoly(img_base, np.array(
-            np.c_[x, y], dtype='int32'), 1)
+            np.c_[x_right, y_right], dtype='int32'), 1)
+        cv2.fillConvexPoly(img_base, np.array(
+            np.c_[x_left, y_left], dtype='int32'), 1)
         img_mask = cv2.GaussianBlur(
             img_base, (ksize_h, ksize_w), 0)  # 51,51 81,81
+        kernel = np.ones((10, 10), np.uint8)
+        img_mask = cv2.erode(img_mask, kernel, iterations=1)
         img_blur_3d = np.ndarray(
             [self.height, self.width, 3], dtype='float')
         img_blur_3d[:, :, 0] = img_mask
