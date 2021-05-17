@@ -1,7 +1,7 @@
 # Import necessary libraries
 import threading
 
-from flask import Flask, render_template, Response
+from flask import Flask, json, render_template, Response, request
 import cv2
 import atexit
 import src.tints.cv.makeup.utils as mutils
@@ -55,6 +55,21 @@ def lipstick():
 def clean_exit():
     print('Making sure camera is turned off to exit properly.')
     mutils.stop_cam()
+
+
+@app.route('/enable/<makeup_type>', methods=['POST'])
+def enabel_makeup(makeup_type):
+    print(makeup_type)
+    input_args = [makeup_type, *request.get_json().values()]
+    makeup_args = {x: y for x, y in zip(mutils.Globals.makeup_args, input_args) if y is not None}
+    mutils.enable_makeup(**makeup_args)
+    return f'{makeup_type} activated', 200
+
+
+@app.route('/disable/<makeup_type>', methods=['POST'])
+def disable_makeup(makeup_type):
+    mutils.disable_makeup(makeup_type)
+    return f'{makeup_type} deactivated' , 200
 
 
 atexit.register(clean_exit)
