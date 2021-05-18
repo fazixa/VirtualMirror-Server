@@ -10,7 +10,9 @@ from src.tints.route.simulation import *
 from src.tints.route.eyeshadow import *
 from src.tints.route.blush import *
 from src.tints.route.foundation import *
-from src.tints.route.auth import *
+from src.tints.route.lipstick import *
+from src.tints.route.eyeliner import *
+from src.tints.route.concealer import *
 
 # Load environment config from .env file
 load_dotenv()
@@ -34,7 +36,9 @@ app.register_blueprint(simulation)
 app.register_blueprint(eyeshadow)
 app.register_blueprint(blushr)
 app.register_blueprint(foundationm)
-app.register_blueprint(auth)
+app.register_blueprint(lipstickm)
+app.register_blueprint(eyelinerm)
+app.register_blueprint(concealerm)
 
 # Start connect to MongoDB
 DB.init()

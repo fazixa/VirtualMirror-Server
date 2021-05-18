@@ -14,15 +14,15 @@ import imageio
 
 class lipstick(object):
 
-    def __init__(self, img):
+    def __init__(self):
         """ Initiator method for class """
         self.red_l = 0
         self.green_l = 0
         self.blue_l = 0
 
-        self.image = img
-        self.im_copy = self.image.copy()
-        self.height, self.width = self.image.shape[:2]
+        self.image = 0
+        self.im_copy = 0
+        
 
 
         self.intensity = 0
@@ -197,7 +197,7 @@ class lipstick(object):
         L1, A1, B1 = color.rgb2lab(np.array((float(r) / 255.,float(g) / 255., float(b) / 255.)).reshape(1, 1, 3)).reshape(3, )
 
         G = L1 / L
-        Op = 0.85
+        Op = self.intensity
 
         lip_LAB= lip_LAB.reshape(len(x), 1, 3)
         lip_LAB[:,:,1:3] = Op * np.array([A1,B1]) + (1-Op) * lip_LAB[:,:,1:3]
@@ -360,7 +360,7 @@ class lipstick(object):
         filter = np.zeros((height,width))
         cv2.fillConvexPoly(filter,np.array(c_[y, x],dtype = 'int32'),1)
        
-        filter = cv2.GaussianBlur(filter,(51,51),0)
+        filter = cv2.GaussianBlur(filter,(81,81),0)
         alpha=np.zeros([height,width,3],dtype='float64')
         alpha[:,:,0]=filter
         alpha[:,:,1]=filter
@@ -371,7 +371,7 @@ class lipstick(object):
     
 
 
-    def apply_lipstick(self,x,y, r, g, b, lipstick_type, gloss):
+    def apply_lipstick(self,img, x,y, r, g, b, intensity, lipstick_type, gloss):
         """apllies lipstick on thedetected face
 
         Args:
@@ -386,7 +386,10 @@ class lipstick(object):
         Returns: 
             the imagee of the face with lipstick applied   
         """
-   
+        self.image = img
+        self.im_copy = img.copy()
+        self.height, self.width = self.image.shape[:2]
+        self.intensity = intensity
         points = self.get_lips(x, y)
         o_l, o_u, i_u, i_l, outter_x, inner_x =self.draw_curves(points)
         x , y , lowerx,lowery= self.fill_lips( o_l, o_u, i_u, i_l, outter_x, inner_x )

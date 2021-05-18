@@ -23,8 +23,8 @@ class Concealer(object):
         self.green_b = int(g_value)
         self.blue_b = int(b_value)
         self.image = img
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
-        gray_image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+        # self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        # gray_image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
         # shape = self.get_cheek_shape(gray_image)
         self.image = Image.fromarray(self.image)
         self.image = np.asarray(self.image)

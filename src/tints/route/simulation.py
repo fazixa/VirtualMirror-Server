@@ -201,8 +201,8 @@ def video_eyeshadow(makeup_type):
     input_args = [
         makeup_type,
         req_data.get('r_value'),
-        req_data.get('b_value'),
         req_data.get('g_value'),
+        req_data.get('b_value'),
         req_data.get('intensity'),
         req_data.get('l_type'),
         req_data.get('gloss'),

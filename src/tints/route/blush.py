@@ -24,7 +24,7 @@ face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
 
 @blushr.before_request
 def before_request():
-    print('Start eyeshadow API request')
+    print('Start blush API request')
 
 # --------------------------------- generl defs
 
@@ -56,9 +56,31 @@ def simulator_lip():
 
     landmarks_x = []
     landmarks_y = []
-    for i in range(68):
-        landmarks_x.append(pose_landmarks.part(i).x)
-        landmarks_y.append(pose_landmarks.part(i).y)
+    padding =50
+    face_resized_width = 250
+
+
+    for face in detected_faces:
+        x1 = face.left()
+        y1 = face.top()
+        x2 = face.right()
+        y2 = face.bottom()
+
+        height, width = user_image.shape[:2]
+        orignal_face_width = x2-x1
+        ratio = face_resized_width / orignal_face_width
+        new_padding = int(padding / ratio)
+        # new_padding_up = int(padding_up/ratio)
+        new_y1= max(y1-new_padding,0)
+        new_y2= min(y2+new_padding,height)
+        new_x1= max(x1-new_padding,0)
+        new_x2= min(x2+new_padding,width)
+        cropped_img = user_image[ new_y1:new_y2, new_x1:new_x2]
+        cropped_img = imutils.resize(cropped_img, width = (face_resized_width+2*padding))
+
+        for i in range(68):
+            landmarks_x.append(int(((pose_landmarks.part(i).x)-new_x1)*ratio))
+            landmarks_y.append(int(((pose_landmarks.part(i).y)-new_y1)*ratio))
 
     r_value = request.form.get('r_value')
     g_value = request.form.get('g_value')
@@ -67,19 +89,31 @@ def simulator_lip():
     blush_makeup = blush()
     
     img = blush_makeup.apply_blush(
-        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value, 1.5)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    predict_result_intense = save_iamge(img,r_value,g_value,b_value,"blush",1.5)
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.7)
+    img = imutils.resize(img, width=new_x2-new_x1)
+    cheight, cwidth = img.shape[:2]
+    user_image_copy = user_image.copy()
+    user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
+    user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
+    predict_result_intense = save_iamge(user_image_copy,r_value,g_value,b_value,"blush",0.7)
 
     img = blush_makeup.apply_blush(
-        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.4)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    predict_result_medium = save_iamge(img,r_value,g_value,b_value,"blush",0.4)
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.5)
+    img = imutils.resize(img, width=new_x2-new_x1)
+    cheight, cwidth = img.shape[:2]
+    user_image_copy = user_image.copy()
+    user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
+    user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
+    predict_result_medium = save_iamge(user_image_copy,r_value,g_value,b_value,"blush",0.5)
 
     img = blush_makeup.apply_blush(
-        user_image,landmarks_x, landmarks_y, r_value, g_value, b_value,0.1)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    predict_result_fade = save_iamge(img,r_value,g_value,b_value,"blush",0.1)
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,0.3)
+    img = imutils.resize(img, width=new_x2-new_x1)
+    cheight, cwidth = img.shape[:2]
+    user_image_copy = user_image.copy()
+    user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
+    user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
+    predict_result_fade = save_iamge(user_image_copy,r_value,g_value,b_value,"blush",0.3)
 
     result = [predict_result_intense,
               predict_result_medium, predict_result_fade]
