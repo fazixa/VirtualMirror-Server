@@ -4,13 +4,13 @@ import dlib
 import time
 import threading
 from src.tints.settings import SHAPE_68_PATH, SHAPE_81_PATH
-from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
-from src.tints.cv.simulation.apply_blush import Blush
-from src.tints.cv.simulation.apply_lipstick import Lipstick
-from src.tints.cv.simulation.apply_concealer import Concealer
 from src.tints.cv.simulation.apply_foundation import Foundation
-from src.tints.cv.simulation.apply_eyeliner import eyeliner
-# from .eyeliner import Eyeliner
+from src.tints.cv.simulation.apply_concealer import Concealer
+from src.tints.cv.simulation.apply_blush import Blush
+from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
+from src.tints.cv.simulation.apply_eyeliner import Eyeliner
+from src.tints.cv.simulation.apply_lipstick import Lipstick
+import traceback
 
 class Color:
     def __init__(self, r=0, g=0, b=0, intensity=.7):
@@ -45,8 +45,8 @@ class Globals:
     concealer = Concealer()
     blush = Blush()
     eyeshadow = Eyeshadow()
-    # eyeliner = Eyeliner()
-    # lipstick = Lipstick()
+    eyeliner = Eyeliner()
+    lipstick = Lipstick()
     cap = cv2.VideoCapture()
     detector = dlib.get_frontal_face_detector()
     face_pose_predictor_68 = dlib.shape_predictor(SHAPE_68_PATH)
@@ -110,8 +110,7 @@ def eyeshadow_worker(w_frame, r, g, b, intensity, out_queue) -> None:
 
 
 def eyeliner_worker(w_frame, r, g, b, intensity, out_queue) -> None:
-    eye = eyeliner()
-    result = eye.apply_eyeliner(
+    result = Globals.eyeliner.apply_eyeliner(
         w_frame, 
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
         r, g, b, 1
@@ -120,11 +119,11 @@ def eyeliner_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     out_queue.append({
         'index': 4,
         'image': result,
-        'range': (eye.x_all, eye.y_all)
+        'range': (Globals.eyeliner.x_all, Globals.eyeliner.y_all)
     })
 
 def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> None:
-    result = Globals.Lipstick.apply_lipstick(
+    result = Globals.lipstick.apply_lipstick(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
         r, g, b, intensity, l_type, gloss
@@ -133,17 +132,17 @@ def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> No
     out_queue.append({
         'index': 5,
         'image': result,
-        'range': (Globals.Lipstick.x_all, Globals.Lipstick.y_all)
+        'range': (Globals.lipstick.x_all, Globals.lipstick.y_all)
     })
 
 
 Globals.makeup_workers = {
-    'foundation_worker':    { 'function': foundation_worker,    'args': [], 'enabled': False },
-    'eyeshadow_worker':     { 'function': eyeshadow_worker,     'args': [], 'enabled': False },
-    'eyeliner_worker':      { 'function': eyeliner_worker,      'args': [], 'enabled': False },
-    'blush_worker':         { 'function': blush_worker,         'args': [], 'enabled': False },
-    'lipstick_worker':      { 'function': lipstick_worker,      'args': [], 'enabled': False },
-    'concealer_worker':     { 'function': concealer_worker,     'args': [], 'enabled': False },
+    'lipstick_worker':      { 'function': lipstick_worker,      'instance': Globals.lipstick,   'args': [], 'enabled': False },
+    'eyeliner_worker':      { 'function': eyeliner_worker,      'instance': Globals.eyeliner,   'args': [], 'enabled': False },
+    'eyeshadow_worker':     { 'function': eyeshadow_worker,     'instance': Globals.eyeshadow,  'args': [], 'enabled': False },
+    'blush_worker':         { 'function': blush_worker,         'instance': Globals.blush,      'args': [], 'enabled': False },
+    'concealer_worker':     { 'function': concealer_worker,     'instance': Globals.concealer,  'args': [], 'enabled': False },
+    'foundation_worker':    { 'function': foundation_worker,    'instance': Globals.foundation, 'args': [], 'enabled': False },
 }
 
 
@@ -186,6 +185,30 @@ def join_makeup_workers(w_frame):
     return w_frame
 
 
+def join_makeup_workers_static(w_frame):
+    shared_list = []
+
+    for makeup_worker in Globals.makeup_workers:
+        worker = Globals.makeup_workers[makeup_worker]
+
+        if worker['enabled']:
+            shared_list.append({
+                'image': worker['instance'].im_copy,
+                'range': (worker['instance'].x_all, worker['instance'].y_all)
+            })
+    
+    while len(shared_list) > 0:
+        temp_img = shared_list.pop()
+        (range_x, range_y), temp_img = temp_img['range'], temp_img['image']
+
+        for x, y in zip(range_x, range_y):
+            w_frame[x, y] = temp_img[x, y]
+
+    w_frame = cv2.cvtColor(w_frame, cv2.COLOR_RGB2BGR)
+
+    return w_frame
+
+
 def apply_makeup_video():
     # Return last recorded image of None if does not exist
     if not Globals.video_feed_enabled: return Globals.output_frame
@@ -207,7 +230,6 @@ def apply_makeup_video():
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-
         # Motion Detection
         if Globals.prev_frame is None:
             Globals.prev_frame = gray
@@ -216,47 +238,50 @@ def apply_makeup_video():
         frame_diff = cv2.absdiff(Globals.prev_frame, gray)
 
         frame_thresh = cv2.threshold(frame_diff, 2, 255, cv2.THRESH_BINARY)[1] 
-        frame_thresh = cv2.dilate(frame_thresh, None, iterations = 2) 
+        frame_thresh = cv2.dilate(frame_thresh, None, iterations=2) 
 
         cnts, _ = cv2.findContours(frame_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
 
         for contour in cnts: 
-            if cv2.contourArea(contour) < 10000: 
+            temp = cv2.contourArea(contour)
+            if temp < 150000: 
                 continue
+            # print(temp)
             Globals.motion_detected = True
 
         try:
-            if Globals.motion_detected:
+            detected_faces = Globals.detector(gray, 0)
+            landmarks_x_68 = []
+            landmarks_y_68 = []
+            landmarks_x_81 = []
+            landmarks_y_81 = []
 
-                detected_faces = Globals.detector(gray, 0)
-                landmarks_x_68 = []
-                landmarks_y_68 = []
-                landmarks_x_81 = []
-                landmarks_y_81 = []
+            for face in detected_faces:
+                x1 = face.left()
+                y1 = face.top()
+                x2 = face.right()
+                y2 = face.bottom()
 
-                for face in detected_faces:
-                    x1 = face.left()
-                    y1 = face.top()
-                    x2 = face.right()
-                    y2 = face.bottom()
+                height, width = frame2.shape[:2]
 
-                    height, width = frame2.shape[:2]
+                # =====================================================
+                '''
+                Cropping face with padding to cover forehead and chin
+                '''
+                orignal_face_width = x2-x1
+                ratio = Globals.face_resized_width / orignal_face_width
+                new_padding = int(Globals.padding / ratio)
+                new_y1= max(y1-new_padding,0)
+                new_y2= min(y2+new_padding,height)
+                new_x1= max(x1-new_padding,0)
+                new_x2= min(x2+new_padding,width)
+                cropped_img = frame2[ new_y1:new_y2, new_x1:new_x2]
+                cropped_img = imutils.resize(cropped_img, width = (Globals.face_resized_width + 2 * Globals.padding))
+                # ======================================================
 
-                    # =====================================================
-                    '''
-                    Cropping face with padding to cover forehead and chin
-                    '''
-                    orignal_face_width = x2-x1
-                    ratio = Globals.face_resized_width / orignal_face_width
-                    new_padding = int(Globals.padding / ratio)
-                    new_y1= max(y1-new_padding,0)
-                    new_y2= min(y2+new_padding,height)
-                    new_x1= max(x1-new_padding,0)
-                    new_x2= min(x2+new_padding,width)
-                    cropped_img = frame2[ new_y1:new_y2, new_x1:new_x2]
-                    cropped_img = imutils.resize(cropped_img, width = (Globals.face_resized_width + 2 * Globals.padding))
-                    # ======================================================
-
+                if Globals.motion_detected:
+                    print('motion detected')
+                    
                     pose_landmarks = Globals.face_pose_predictor_68(gray, face)
 
                     for i in range(68):
@@ -278,18 +303,18 @@ def apply_makeup_video():
 
                     filter_res = join_makeup_workers(cropped_img)
 
-                    if filter_res is not None:                
-                        filter_res = imutils.resize(filter_res, width=new_x2 - new_x1)
-                        cheight, cwidth = filter_res.shape[:2]
-                        frame[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = filter_res
+                    Globals.motion_detected = False
 
-                Globals.motion_detected = False
+                else:
+                    print('no motion detected')
+                    filter_res = join_makeup_workers_static(cropped_img)
             
-            else:
-                pass
+                filter_res = imutils.resize(filter_res, width=new_x2 - new_x1)
+                cheight, cwidth = filter_res.shape[:2]
+                frame[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = filter_res
 
         except Exception as e:
-            print(e)
+            traceback.print_exc()
 
         Globals.prev_frame = gray.copy()
 

@@ -22,8 +22,6 @@ class Lipstick(object):
 
         self.image = 0
         self.im_copy = 0
-        
-
 
         self.intensity = 0
         self.x = []
@@ -31,8 +29,9 @@ class Lipstick(object):
         self.intensitymoist = 0.3
         self.x_all = []
         self.y_all = []
+        self.result = None
 
-    def get_lips(self,x, y):
+    def get_lips(self, x, y):
 
         """ Seprates corresponding lips points from all detected points
 
@@ -371,7 +370,7 @@ class Lipstick(object):
     
 
 
-    def apply_lipstick(self,img, x,y, r, g, b, intensity, lipstick_type, gloss):
+    def apply_lipstick(self, image, x, y, r, g, b, intensity, lipstick_type, gloss):
         """apllies lipstick on thedetected face
 
         Args:
@@ -386,13 +385,15 @@ class Lipstick(object):
         Returns: 
             the imagee of the face with lipstick applied   
         """
-        self.image = img
-        self.im_copy = img.copy()
+
+        self.image = image
+        self.im_copy = image.copy()
         self.height, self.width = self.image.shape[:2]
         self.intensity = intensity
+   
         points = self.get_lips(x, y)
         o_l, o_u, i_u, i_l, outter_x, inner_x =self.draw_curves(points)
-        x , y , lowerx,lowery= self.fill_lips( o_l, o_u, i_u, i_l, outter_x, inner_x )
+        x , y , lowerx, lowery= self.fill_lips( o_l, o_u, i_u, i_l, outter_x, inner_x )
         self.change_rgb(x,y, r, g, b)
         if(lipstick_type == "hard"):
             self.fill_solids(x,y)
@@ -403,6 +404,4 @@ class Lipstick(object):
         self.y_all = y
 
         # self.moist(lowerx, lowery, motion,220 , 220, 220)
-
-
         return self.im_copy

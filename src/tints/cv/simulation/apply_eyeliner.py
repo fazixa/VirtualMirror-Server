@@ -15,7 +15,7 @@ from skimage import color
 from scipy.interpolate import interp1d
 
 
-class eyeliner(object):
+class Eyeliner(object):
 
     def __init__(self):
         self.r = 0

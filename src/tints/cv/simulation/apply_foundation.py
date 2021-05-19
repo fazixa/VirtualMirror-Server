@@ -48,7 +48,7 @@ class Foundation(object):
         self.image = Image.fromarray(self.image)
         self.image = np.asarray(self.image)
         self.height, self.width = self.image.shape[:2]
-        self.image_copy = self.image.copy()
+        self.im_copy = self.image.copy()
 
         # face_bottom_x = landmark_x[1:27]
         # face_bottom_y = landmark_y[1:27]
@@ -75,9 +75,9 @@ class Foundation(object):
         self.x_all = face_top_x
         self.y_all = face_top_y
 
-        # self.image_copy = cv2.cvtColor(
-        #     self.image_copy, cv2.COLOR_BGR2RGB)
-        return self.image_copy
+        # self.im_copy = cv2.cvtColor(
+        #     self.im_copy, cv2.COLOR_BGR2RGB)
+        return self.im_copy
         
 
     def get_cheek_shape(self, gray_image):
@@ -147,8 +147,8 @@ class Foundation(object):
         # imgBlur3D[:, :, 0] = imgMask
         # imgBlur3D[:, :, 1] = imgMask
         # imgBlur3D[:, :, 2] = imgMask
-        # self.image_copy = (
-        #     imgBlur3D*self.image + (1 - imgBlur3D)*self.image_copy).astype('uint8')
+        # self.im_copy = (
+        #     imgBlur3D*self.image + (1 - imgBlur3D)*self.im_copy).astype('uint8')
 
         img_base = np.zeros((self.height, self.width))
         cv2.fillConvexPoly(img_base, np.array(
@@ -160,6 +160,6 @@ class Foundation(object):
         img_blur_3d[:, :, 0] = img_mask
         img_blur_3d[:, :, 1] = img_mask
         img_blur_3d[:, :, 2] = img_mask
-        self.image_copy = (
-            img_blur_3d * self.image + (1 - img_blur_3d) * self.image_copy).astype('uint8')
+        self.im_copy = (
+            img_blur_3d * self.image + (1 - img_blur_3d) * self.im_copy).astype('uint8')
 
