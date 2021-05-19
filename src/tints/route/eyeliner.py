@@ -6,7 +6,7 @@ from flask_cors import cross_origin
 from PIL import Image
 from base64 import encodebytes
 from src.tints.utils.json_encode import JSONEncoder
-from src.tints.cv.simulation.apply_eyeliner import eyeliner
+from src.tints.cv.simulation.apply_eyeliner import Eyeliner
 from src.tints.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
 import time
@@ -86,7 +86,7 @@ def simulator_lip():
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')
 
-    eyeliner_makeup = eyeliner()
+    eyeliner_makeup = Eyeliner()
     
     img = eyeliner_makeup.apply_eyeliner(
         cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 1.2)
