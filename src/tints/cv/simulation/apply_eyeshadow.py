@@ -110,7 +110,7 @@ class Eyeshadow(object):
         self.im_copy[x, y] = color.lab2rgb(lip_LAB).reshape(len(x), 3) * 255
 
         # self.im_copy = cv2.cvtColor(self.im_copy, cv2.COLOR_BGR2RGB)
-        cv2.imwrite('./eyeshadow2.jpg', self.im_copy)
+        # cv2.imwrite('./eyeshadow2.jpg', self.im_copy)
 
     def apply_blur(self, x, y):
         # gussian blur
