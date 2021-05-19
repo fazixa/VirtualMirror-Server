@@ -85,13 +85,14 @@ def simulator_lip():
     r_value = request.form.get('r_value')
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')
+    gloss = bool(request.form.get('gloss'))
     l_type = request.form.get('l_type')
-    gloss = request.form.get('gloss')
-    print(l_type,gloss)
+
+    print(gloss, l_type)
     lip_makeup = Lipstick()
     
     img = lip_makeup.apply_lipstick(
-        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.9, 'soft', True)
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.9, l_type, gloss)
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]
     user_image_copy = user_image.copy()
@@ -100,7 +101,7 @@ def simulator_lip():
     predict_result_intense = save_iamge(user_image_copy,r_value,g_value,b_value,"lip",0.9)
 
     img = lip_makeup.apply_lipstick(
-        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.7, 'soft', True)
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value, 0.7, l_type, gloss)
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]
     user_image_copy = user_image.copy()
@@ -109,7 +110,7 @@ def simulator_lip():
     predict_result_medium = save_iamge(user_image_copy,r_value,g_value,b_value,"lip",0.7)
 
     img = lip_makeup.apply_lipstick(
-        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,0.5, 'soft', True)
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,0.5, l_type, gloss)
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]
     user_image_copy = user_image.copy()

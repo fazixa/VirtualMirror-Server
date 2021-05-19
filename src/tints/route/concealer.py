@@ -89,31 +89,31 @@ def simulator_lip():
     concealer_makeup = Concealer()
     
     img = concealer_makeup.apply_concealer(
-        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81, 0.7)
-    img = imutils.resize(img, width=new_x2-new_x1)
-    cheight, cwidth = img.shape[:2]
-    user_image_copy = user_image.copy()
-    user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
-    user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
-    predict_result_intense = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.7)
-
-    img = concealer_makeup.apply_concealer(
         cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81, 0.5)
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]
     user_image_copy = user_image.copy()
     user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
     user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
-    predict_result_medium = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.5)
+    predict_result_intense = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.5)
 
     img = concealer_makeup.apply_concealer(
-        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81, 0.3)
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81, 0.35)
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]
     user_image_copy = user_image.copy()
     user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
     user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
-    predict_result_fade = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.3)
+    predict_result_medium = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.35)
+
+    img = concealer_makeup.apply_concealer(
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81, 0.2)
+    img = imutils.resize(img, width=new_x2-new_x1)
+    cheight, cwidth = img.shape[:2]
+    user_image_copy = user_image.copy()
+    user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
+    user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
+    predict_result_fade = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.2)
 
     result = [predict_result_intense,
               predict_result_medium, predict_result_fade]

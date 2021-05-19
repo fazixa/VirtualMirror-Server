@@ -13,7 +13,6 @@ import scipy.misc
 import time
 import imageio
 
-
 class Lipstick(object):
 
     def __init__(self):
@@ -24,16 +23,17 @@ class Lipstick(object):
 
         self.image = 0
         self.im_copy = 0
+        
+
 
         self.intensity = 0
         self.x = []
         self.y = []
-        self.intensitymoist = 0.4
+        self.intensitymoist = 0.8
         self.x_all = []
         self.y_all = []
-        self.result = None
 
-    def get_lips(self, x, y):
+    def get_lips(self,x, y):
 
         """ Seprates corresponding lips points from all detected points
 
@@ -252,9 +252,9 @@ class Lipstick(object):
         L1, A1, B1 = color.rgb2lab(np.array((r / 255., g / 255., b / 255.)).reshape(1, 1, 3)).reshape(3, )
         ll, aa, bb = L1 - L, A1 - A, B1 - B
 
-
+        length = int(len(x)/5)
         Li = val[:, 0]
-        light_points = sorted(Li)[-100:]
+        light_points = sorted(Li)[-length:]
         min_val = min(light_points)
         max_val = max(light_points)
 
@@ -267,9 +267,9 @@ class Lipstick(object):
         
         r_img = (self.im_copy[x, y][:, 0]).flatten()
 
-        light_points = sorted(Li)[-100:]
-        min_val = min(light_points)
-        max_val = max(light_points)
+        # light_points = sorted(Li)[-100:]
+        # min_val = min(light_points)
+        # max_val = max(light_points)
 
         
 
@@ -375,11 +375,11 @@ class Lipstick(object):
         height,width = self.image.shape[:2]
         filter = np.zeros((height,width))
         cv2.fillConvexPoly(filter,np.array(c_[y, x],dtype = 'int32'),1)
-       
-        filter = cv2.GaussianBlur(filter,(81,81),0)
-        kernel = np.ones((3,3),np.uint8)
+        filter = cv2.GaussianBlur(filter,(31,31),0)
+        kernel = np.ones((5,5),np.uint8)
         filter = cv2.erode(filter,kernel,iterations = 1)
 
+  
         alpha=np.zeros([height,width,3],dtype='float64')
         alpha[:,:,0]=filter
         alpha[:,:,1]=filter
@@ -388,6 +388,7 @@ class Lipstick(object):
         
         mask = (alpha*self.im_copy+(1-alpha)*self.image).astype('uint8')
         cv2.imwrite('./data/mask.jpg',mask)
+        self.im_copy = (alpha*self.im_copy+(1-alpha)*self.image).astype('uint8')
 
     
 
@@ -414,8 +415,9 @@ class Lipstick(object):
         points = self.get_lips(x, y)
         o_l, o_u, i_u, i_l, outter_x, inner_x =self.draw_curves(points)
         x , y , lowerx,lowery= self.fill_lips( o_l, o_u, i_u, i_l, outter_x, inner_x )
-        if(gloss):
-            self.moist(lowerx, lowery, 220 , 220, 220)
+        if (gloss):
+            print("Gloss")
+            self.moist(lowerx, lowery, 250 , 250, 220)
         self.change_rgb(x,y, r, g, b)
         if(lipstick_type == "hard"):
             self.fill_solids(x,y)
@@ -424,5 +426,7 @@ class Lipstick(object):
 
         self.x_all = x
         self.y_all = y
+
+
 
         return self.im_copy

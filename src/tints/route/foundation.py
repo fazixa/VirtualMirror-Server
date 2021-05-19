@@ -6,7 +6,6 @@ from flask_cors import cross_origin
 from PIL import Image
 from base64 import encodebytes
 from src.tints.utils.json_encode import JSONEncoder
-# from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
 from src.tints.cv.simulation.apply_foundation import Foundation
 from src.tints.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
