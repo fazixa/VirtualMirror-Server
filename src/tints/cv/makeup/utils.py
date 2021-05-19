@@ -238,14 +238,14 @@ def apply_makeup_video():
     
         frame_diff = cv2.absdiff(Globals.prev_frame, gray)
 
-        frame_thresh = cv2.threshold(frame_diff, 2, 255, cv2.THRESH_BINARY)[1] 
+        frame_thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)[1] 
         frame_thresh = cv2.dilate(frame_thresh, None, iterations=2) 
 
         cnts, _ = cv2.findContours(frame_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
 
         for contour in cnts: 
             temp = cv2.contourArea(contour)
-            if temp < 150000: 
+            if temp < 900: 
                 continue
             # print(temp)
             Globals.motion_detected = True
@@ -320,16 +320,16 @@ def apply_makeup_video():
         Globals.prev_frame = gray.copy()
 
         # The following line is for testing with cv2 imshow
-        # return frame
+        return frame
 
-        (flag, encodedImage) = cv2.imencode(".png", frame)
+        # (flag, encodedImage) = cv2.imencode(".png", frame)
         
-        # ensure the frame was successfully encoded
-        if not flag:
-            continue
-        # yield the output frame in the byte format
-        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-            bytearray(encodedImage) + b'\r\n')
+        # # ensure the frame was successfully encoded
+        # if not flag:
+        #     continue
+        # # yield the output frame in the byte format
+        # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+        #     bytearray(encodedImage) + b'\r\n')
 
 
 
