@@ -3,6 +3,8 @@ import imutils
 import dlib
 import time
 import threading
+
+from imutils.convenience import get_opencv_major_version
 from src.tints.settings import SHAPE_68_PATH, SHAPE_81_PATH
 from src.tints.cv.simulation.apply_foundation import Foundation
 from src.tints.cv.simulation.apply_concealer import Concealer
@@ -34,14 +36,18 @@ class Globals:
     output_frame = None
     prev_time = 0
     output_frame = None
-    prev_result = None
     frame_rate = 30
     padding = 50
     face_resized_width = 250
     video_feed_enabled = False
     # Motion Detection Vars
     prev_frame = None
-    motion_detected = False
+    motion_detected = True
+
+    new_x1 = None
+    new_x2 = None
+    new_y1 = None
+    new_y2 = None
     #######################
     foundation = Foundation()
     concealer = Concealer()
@@ -246,7 +252,7 @@ def apply_makeup_video():
 
         for contour in cnts: 
             temp = cv2.contourArea(contour)
-            if temp < 900:  
+            if temp < 800:  
                 continue
             # print(temp)
             Globals.motion_detected = True
@@ -259,33 +265,34 @@ def apply_makeup_video():
             landmarks_y_81 = []
 
             for face in detected_faces:
-                x1 = face.left()
-                y1 = face.top()
-                x2 = face.right()
-                y2 = face.bottom()
-
-                height, width = frame2.shape[:2]
-
-                # =====================================================
-                '''
-                Cropping face with padding to cover forehead and chin
-                '''
-                orignal_face_width = x2-x1
-                ratio = Globals.face_resized_width / orignal_face_width
-                new_padding = int(Globals.padding / ratio)
-                new_y1= max(y1-new_padding,0)
-                new_y2= min(y2+new_padding,height)
-                new_x1= max(x1-new_padding,0)
-                new_x2= min(x2+new_padding,width)
-                cropped_img = frame2[ new_y1:new_y2, new_x1:new_x2]
-                cropped_img = imutils.resize(cropped_img, width = (Globals.face_resized_width + 2 * Globals.padding))
-                # ======================================================
 
                 filter_res = None
 
                 if Globals.motion_detected:
                     print('motion detected')
                     
+                    x1 = face.left()
+                    y1 = face.top()
+                    x2 = face.right()
+                    y2 = face.bottom()
+
+                    height, width = frame2.shape[:2]
+
+                    # =====================================================
+                    '''
+                    Cropping face with padding to cover forehead and chin
+                    '''
+                    orignal_face_width = x2-x1
+                    ratio = Globals.face_resized_width / orignal_face_width
+                    new_padding = int(Globals.padding / ratio)
+                    Globals.new_y1 = new_y1 = max(y1-new_padding,0)
+                    Globals.new_y2 = new_y2 = min(y2+new_padding,height)
+                    Globals.new_x1 = new_x1 = max(x1-new_padding,0)
+                    Globals.new_x2 = new_x2 = min(x2+new_padding,width)
+                    cropped_img = frame2[ new_y1:new_y2, new_x1:new_x2]
+                    cropped_img = imutils.resize(cropped_img, width = (Globals.face_resized_width + 2 * Globals.padding))
+                    # ======================================================
+
                     pose_landmarks = Globals.face_pose_predictor_68(gray, face)
 
                     for i in range(68):
@@ -312,14 +319,19 @@ def apply_makeup_video():
                     filter_res = imutils.resize(filter_res, width=new_x2 - new_x1)
                     cheight, cwidth = filter_res.shape[:2]
                     frame[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = filter_res
-                    Globals.prev_result = frame
 
                 else:
                     print('no motion detected')
-                    # filter_res = join_makeup_workers_static(cropped_img)
-                    if Globals.prev_result is not None:
-                        frame = Globals.prev_result
-                
+
+                    cropped_img = frame2[ Globals.new_y1:Globals.new_y2, Globals.new_x1:Globals.new_x2]
+                    cropped_img = imutils.resize(cropped_img, width = (Globals.face_resized_width + 2 * Globals.padding))
+
+                    filter_res = join_makeup_workers_static(cropped_img)
+            
+                    filter_res = imutils.resize(filter_res, width=Globals.new_x2 - Globals.new_x1)
+                    cheight, cwidth = filter_res.shape[:2]
+                    frame[ Globals.new_y1:Globals.new_y1+cheight, Globals.new_x1:Globals.new_x1+cwidth] = filter_res
+                    
 
         except Exception as e:
             traceback.print_exc()
@@ -341,6 +353,8 @@ def apply_makeup_video():
 
 
 def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, lipstick_type='hard', gloss=False, k_h=81, k_w=81):
+    Globals.motion_detected = True
+    
     if makeup_type == 'eyeshadow':
         Globals.makeup_workers['eyeshadow_worker']['args'] = [*Color(r, g, b, intensity).values()]
         Globals.makeup_workers['eyeshadow_worker']['enabled'] = True
@@ -365,6 +379,8 @@ Globals.makeup_args = enable_makeup.__code__.co_varnames
 
 
 def disable_makeup(makeup_type):
+    Globals.motion_detected = True
+
     if makeup_type == 'eyeshadow':
         Globals.makeup_workers['eyeshadow_worker']['enabled'] = False
     elif makeup_type == 'lipstick':
