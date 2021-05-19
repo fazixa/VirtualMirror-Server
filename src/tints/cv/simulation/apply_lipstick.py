@@ -417,7 +417,7 @@ class Lipstick(object):
         x , y , lowerx,lowery= self.fill_lips( o_l, o_u, i_u, i_l, outter_x, inner_x )
         if (gloss):
             print("Gloss")
-            self.moist(lowerx, lowery, 250 , 250, 220)
+            self.moist(lowerx, lowery, 230 , 230, 230)
         self.change_rgb(x,y, r, g, b)
         if(lipstick_type == "hard"):
             self.fill_solids(x,y)
