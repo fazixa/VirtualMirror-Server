@@ -197,18 +197,21 @@ def video_feed():
 @cross_origin()
 def video_eyeshadow(makeup_type):
     print(makeup_type)
+    req_data = request.get_json()
     input_args = [
         makeup_type,
-        request.form.get('r_value'),
-        request.form.get('g_value'),
-        request.form.get('b_value'),
-        request.form.get('intensity'),
-        request.form.get('l_type'),
-        request.form.get('gloss'),
-        request.form.get('k_h'),
-        request.form.get('k_w')
+        req_data.get('r_value'),
+        req_data.get('g_value'),
+        req_data.get('b_value'),
+        req_data.get('intensity'),
+        req_data.get('l_type'),
+        req_data.get('gloss'),
+        req_data.get('k_h'),
+        req_data.get('k_w')
     ]
+    print(input_args)
     makeup_args = {x: y for x, y in zip(mutils.Globals.makeup_args, input_args) if y is not None}
+    print(makeup_args)
     mutils.enable_makeup(**makeup_args)
     return (makeup_type, 200)
 
