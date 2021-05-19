@@ -62,18 +62,36 @@ class Foundation(object):
         # self.__fill_blush_color(intensity)
         # self.__smoothen_blush(face_bottom_x, face_bottom_y, ksize_h, ksize_w)
 
-        face_top_x = np.r_[landmark_x68[1:17], landmark_x[68:81]]
+        face_top_x = landmark_x68[2:16]
+        
+        face_top_x_81 = np.r_[landmark_x[75]
+        , landmark_x[68], landmark_x[69], landmark_x[72]
+        , landmark_x[73], landmark_x[79], landmark_x[74], landmark_x[78]]
         # landmark_x[18:81]
-        face_top_y = np.r_[landmark_y68[1:17], landmark_y[68:81]]
+
+        face_top_y = landmark_y68[2:16]
+        
+        face_top_y_81 = np.r_[landmark_y[75]
+        , landmark_y[68], landmark_y[69], landmark_y[72]
+        , landmark_y[73], landmark_y[79], landmark_y[74], landmark_y[78]]
+
         face_top_x, face_top_y = self.get_boundary_points(
             face_top_x, face_top_y)
+
+        face_top_x_81, face_top_y_81 = self.get_boundary_points(
+            face_top_x_81, face_top_y_81)
+
         face_top_y, face_top_x = self.get_interior_points(
             face_top_x, face_top_y)
+
+        face_top_y_81, face_top_x_81 = self.get_interior_points(
+            face_top_x_81, face_top_y_81)
+        
+        self.x_all = np.concatenate((face_top_x, face_top_x_81)) 
+        self.y_all = np.concatenate((face_top_y, face_top_y_81))
+        
         self.__fill_blush_color(intensity)
         self.__smoothen_blush(face_top_x, face_top_y, ksize_h, ksize_w)
-
-        self.x_all = face_top_x
-        self.y_all = face_top_y
 
         # self.im_copy = cv2.cvtColor(
         #     self.im_copy, cv2.COLOR_BGR2RGB)
