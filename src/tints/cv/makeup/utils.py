@@ -34,6 +34,7 @@ class Globals:
     output_frame = None
     prev_time = 0
     output_frame = None
+    prev_result = None
     frame_rate = 30
     padding = 50
     face_resized_width = 250
@@ -245,7 +246,7 @@ def apply_makeup_video():
 
         for contour in cnts: 
             temp = cv2.contourArea(contour)
-            if temp < 900: 
+            if temp < 900:  
                 continue
             # print(temp)
             Globals.motion_detected = True
@@ -280,6 +281,8 @@ def apply_makeup_video():
                 cropped_img = imutils.resize(cropped_img, width = (Globals.face_resized_width + 2 * Globals.padding))
                 # ======================================================
 
+                filter_res = None
+
                 if Globals.motion_detected:
                     print('motion detected')
                     
@@ -306,13 +309,17 @@ def apply_makeup_video():
 
                     Globals.motion_detected = False
 
+                    filter_res = imutils.resize(filter_res, width=new_x2 - new_x1)
+                    cheight, cwidth = filter_res.shape[:2]
+                    frame[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = filter_res
+                    Globals.prev_result = frame
+
                 else:
                     print('no motion detected')
-                    filter_res = join_makeup_workers_static(cropped_img)
-            
-                filter_res = imutils.resize(filter_res, width=new_x2 - new_x1)
-                cheight, cwidth = filter_res.shape[:2]
-                frame[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = filter_res
+                    # filter_res = join_makeup_workers_static(cropped_img)
+                    if Globals.prev_result is not None:
+                        frame = Globals.prev_result
+                
 
         except Exception as e:
             traceback.print_exc()
