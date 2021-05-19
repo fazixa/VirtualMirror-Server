@@ -19,7 +19,7 @@ from skimage import io
 from scipy import interpolate
 
 
-class foundation(object): 
+class Foundation(object): 
 
     def __init__(self):
         self.r = 0

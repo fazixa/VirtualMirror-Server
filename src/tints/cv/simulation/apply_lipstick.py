@@ -12,7 +12,7 @@ import time
 import imageio
 
 
-class lipstick(object):
+class Lipstick(object):
 
     def __init__(self, img):
         """ Initiator method for class """

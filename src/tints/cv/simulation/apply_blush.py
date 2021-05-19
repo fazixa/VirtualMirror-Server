@@ -7,7 +7,7 @@ from skimage import color
 from scipy.interpolate import interp1d, splprep, splev
 
 
-class blush(object):
+class Blush(object):
 
     def __init__(self):
         self.r = 0
