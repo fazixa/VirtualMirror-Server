@@ -174,23 +174,21 @@ def join_makeup_workers(w_frame):
             t.start()
             t.join()
 
-    if len(shared_list) > 0:
-        shared_list = sorted(shared_list, key=lambda x: x['index'], reverse=True)
+        if len(shared_list) > 0:
+            shared_list = sorted(shared_list, key=lambda x: x['index'], reverse=True)
 
-        final_image = shared_list.pop()['image']
+            final_image = shared_list.pop()['image']
 
-        while len(shared_list) > 0:
-            temp_img = shared_list.pop()
-            (range_x, range_y), temp_img = temp_img['range'], temp_img['image']
+            while len(shared_list) > 0:
+                temp_img = shared_list.pop()
+                (range_x, range_y), temp_img = temp_img['range'], temp_img['image']
 
-            # for x, y in zip(range_x, range_y):
-            final_image[range_x, range_y] = temp_img[range_x, range_y]
+                # for x, y in zip(range_x, range_y):
+                final_image[range_x, range_y] = temp_img[range_x, range_y]
 
-        final_image = cv2.cvtColor(final_image, cv2.COLOR_RGB2BGR)
+            return cv2.cvtColor(final_image, cv2.COLOR_RGB2BGR)
 
-        return final_image
-
-    return w_frame
+    return cv2.cvtColor(w_frame, cv2.COLOR_RGB2BGR)
 
 
 def join_makeup_workers_static(w_frame):
@@ -314,11 +312,11 @@ def apply_makeup_video():
 
                     filter_res = join_makeup_workers(cropped_img)
 
-                    Globals.motion_detected = False
-
                     filter_res = imutils.resize(filter_res, width=new_x2 - new_x1)
                     cheight, cwidth = filter_res.shape[:2]
                     frame[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = filter_res
+
+                    Globals.motion_detected = False
 
                 else:
                     print('no motion detected')
@@ -339,16 +337,16 @@ def apply_makeup_video():
         Globals.prev_frame = gray.copy()
 
         # The following line is for testing with cv2 imshow
-        return frame
+        # return frame
 
-        # (flag, encodedImage) = cv2.imencode(".png", frame)
+        (flag, encodedImage) = cv2.imencode(".png", frame)
         
-        # # ensure the frame was successfully encoded
-        # if not flag:
-        #     continue
-        # # yield the output frame in the byte format
-        # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-        #     bytearray(encodedImage) + b'\r\n')
+        # ensure the frame was successfully encoded
+        if not flag:
+            continue
+        # yield the output frame in the byte format
+        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+            bytearray(encodedImage) + b'\r\n')
 
 
 

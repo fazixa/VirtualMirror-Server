@@ -52,6 +52,6 @@ let lipstick = () => {
 
 setInterval(() => {
     $('#vid-feed').attr("src", "/video-feed?" + new Date().getTime())
-}, 30);
+}, 1000);
 
 // let toggle_feed =
