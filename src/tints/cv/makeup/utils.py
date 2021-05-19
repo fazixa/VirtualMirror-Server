@@ -40,7 +40,7 @@ class Globals:
     video_feed_enabled = False
     # Motion Detection Vars
     prev_frame = None
-    motion_detected = False
+    motion_detected = True
     #######################
     foundation = Foundation()
     concealer = Concealer()
@@ -101,7 +101,7 @@ def eyeshadow_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     result = Globals.eyeshadow.apply_eyeshadow(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, 1
+        r, g, b, 0.85
     )
 
     out_queue.append({
@@ -115,7 +115,7 @@ def eyeliner_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     result = Globals.eyeliner.apply_eyeliner(
         w_frame, 
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, 0.7, l_type, gloss
+        r, g, b, 1
     )
 
     out_queue.append({
@@ -128,7 +128,7 @@ def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> No
     result = Globals.lipstick.apply_lipstick(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, k_h, k_w, 0.5)
+        r, g, b, 0.5, l_type, gloss)
 
     out_queue.append({
         'index': 5,
@@ -320,16 +320,16 @@ def apply_makeup_video():
         Globals.prev_frame = gray.copy()
 
         # The following line is for testing with cv2 imshow
-        return frame
+        # return frame
 
-        # (flag, encodedImage) = cv2.imencode(".png", frame)
+        (flag, encodedImage) = cv2.imencode(".png", frame)
         
-        # # ensure the frame was successfully encoded
-        # if not flag:
-        #     continue
-        # # yield the output frame in the byte format
-        # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-        #     bytearray(encodedImage) + b'\r\n')
+        # ensure the frame was successfully encoded
+        if not flag:
+            continue
+        # yield the output frame in the byte format
+        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+            bytearray(encodedImage) + b'\r\n')
 
 
 
