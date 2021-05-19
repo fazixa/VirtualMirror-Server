@@ -84,13 +84,13 @@ class Eyeliner(object):
         edge_width4 = int((y[36]-y[17])/4)
         edge_width5 = int((y[36]-y[17])/5)
         edge_width7 = int((y[36]-y[17])/7)
-        print("edge;  ", edge_width)
+        # print("edge;  ", edge_width)
         x_left_eye_lower = np.r_[x[17], x[36], x[37],x[38],x[39]]
         x_left_eye_upper = x_left_eye_lower
         y_left_eye_lower = np.r_[y[17]+edge_width+edge_width4, y[36], y[37],y[38],y[39]]
         y_left_eye_upper = np.r_[y[17]+edge_width, y[36]-edge_width3-edge_width7, y[37]-edge_width4,y[38]-edge_width5,y[39]-edge_width7]
-        print(y_left_eye_lower)
-        print(y_left_eye_upper)
+        # print(y_left_eye_lower)
+        # print(y_left_eye_upper)
 
         # right eye
         x_right_eye_lower = np.r_[x[42:46], x[26]-2]
