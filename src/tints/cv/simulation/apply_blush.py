@@ -104,8 +104,7 @@ class Blush(object):
         # y_all = y_left + y_right
         self.y_all = np.concatenate((y_left_all, y_right_all))
         self.x_all = np.concatenate((x_left_all, x_right_all))
-        self.x_all
-        self.y_all 
+
         self.apply_color(self.x_all, self.y_all )
         self.apply_blur(self.x_all, self.y_all )
         # self.blush(x_right, y_right, x_left, y_left)
