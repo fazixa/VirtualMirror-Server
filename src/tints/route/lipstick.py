@@ -85,7 +85,14 @@ def simulator_lip():
     r_value = request.form.get('r_value')
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')
-    gloss = bool(request.form.get('gloss'))
+    print(request.form.get('gloss'))
+    
+    gloss = request.form.get('gloss')
+    if(gloss == 'true'):
+        gloss = True
+    else:
+        gloss = False
+    print(gloss)
     l_type = request.form.get('l_type')
 
     print(gloss, l_type)
