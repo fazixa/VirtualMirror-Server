@@ -15,19 +15,18 @@ from skimage import color
 from scipy.interpolate import interp1d
 
 
-class eyeliner(object):
+class Eyeliner(object):
 
-    def __init__(self, img):
+    def __init__(self):
         self.r = 0
         self.g = 0
         self.b = 0
         self.intensity = 0
         self.eyeshadow_height = 2
         # Original image
-        self.image = img
+        self.image = None
         # All the changes will be applied to im_copy
-        self.im_copy = self.image.copy()
-        self.height, self.width = self.image.shape[:2]
+        self.im_copy = None
         self.x_all = []
         self.y_all = []
 
@@ -43,7 +42,7 @@ class eyeliner(object):
         # calculating mean of each channel
         L, A, B = mean(lip_LAB[:, 0]), mean(lip_LAB[:, 1]), mean(lip_LAB[:, 2])
         # converting the color of the makeup to LAB
-        L1, A1, B1 = color.rgb2lab(np.array((float(self.r) / 255., float(self.g) / 255., float(self.b) / 255.)).reshape(1, 1, 3)).reshape(
+        L1, A1, B1 = color.rgb2lab(np.array((int(self.r) / 255., int(self.g) / 255., int(self.b) / 255.)).reshape(1, 1, 3)).reshape(
             3, )
         # applying the makeup color on image
         G = L1 / L
@@ -57,9 +56,9 @@ class eyeliner(object):
         # gussian blur
         filter = np.zeros((self.height, self.width))
         cv2.fillConvexPoly(filter, np.array(c_[y, x], dtype='int32'), 1)
-        filter = cv2.GaussianBlur(filter, (31, 31), 0)
+        filter = cv2.GaussianBlur(filter, (15, 15), 0)
         # Erosion to reduce blur size
-        kernel = np.ones((7, 7), np.uint8)
+        kernel = np.ones((4, 4), np.uint8)
         filter = cv2.erode(filter, kernel, iterations=1)
         alpha = np.zeros([self.height, self.width, 3], dtype='float64')
         alpha[:, :, 0] = filter
@@ -80,28 +79,38 @@ class eyeliner(object):
     def get_point(self, x, y):
 
         # left eye
+        edge_width = int((y[36]-y[17])/2)
+        edge_width3 = int((y[36]-y[17])/3)
+        edge_width4 = int((y[36]-y[17])/4)
+        edge_width5 = int((y[36]-y[17])/5)
+        edge_width7 = int((y[36]-y[17])/7)
+        print("edge;  ", edge_width)
         x_left_eye_lower = np.r_[x[17], x[36], x[37],x[38],x[39]]
         x_left_eye_upper = x_left_eye_lower
-        y_left_eye_lower = np.r_[y[17]+25, y[36], y[37],y[38],y[39]]
-        y_left_eye_upper = np.r_[y[17]+20, y[36]-15, y[37]-11,y[38]-7,y[39]-5]
+        y_left_eye_lower = np.r_[y[17]+edge_width+edge_width4, y[36], y[37],y[38],y[39]]
+        y_left_eye_upper = np.r_[y[17]+edge_width, y[36]-edge_width3-edge_width7, y[37]-edge_width4,y[38]-edge_width5,y[39]-edge_width7]
         print(y_left_eye_lower)
         print(y_left_eye_upper)
 
         # right eye
         x_right_eye_lower = np.r_[x[42:46], x[26]-2]
         x_rigth_eye_upper = x_right_eye_lower 
-        y_right_eye_lower = np.r_[y[42],y[43],y[44],y[45], y[26]+25]
-        y_right_eye_upper = np.r_[y[42]-5,y[43]-7,y[44]-11,y[45]-15, y[26]+20]
+        y_right_eye_lower = np.r_[y[42],y[43],y[44],y[45], y[26]+edge_width+edge_width4]
+        y_right_eye_upper = np.r_[y[42]-edge_width7,y[43]-edge_width5,y[44]-edge_width4,y[45]-edge_width3-edge_width7, y[26]+edge_width]
 
         return x_left_eye_lower, x_left_eye_upper, y_left_eye_lower, y_left_eye_upper, \
                x_right_eye_lower, x_rigth_eye_upper, y_right_eye_lower, y_right_eye_upper
 
-    def apply_eyeshadow(self, landmarks_x, landmarks_y, r, g, b, intensity):
+    def apply_eyeliner(self, img, landmarks_x, landmarks_y, r, g, b, intensity):
 
         self.r = r
         self.g = g
         self.b = b
         self.intensity = intensity
+
+        self.image = img
+        self.im_copy = img.copy()
+        self.height, self.width = self.image.shape[:2]
         # get eyes point
         x_left_eye_lower, x_left_eye_upper, y_left_eye_lower, y_left_eye_upper, x_right_eye_lower, \
         x_rigth_eye_upper, y_right_eye_lower, y_right_eye_upper = self.get_point(landmarks_x, landmarks_y)

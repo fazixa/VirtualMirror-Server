@@ -6,27 +6,25 @@ from flask_cors import cross_origin
 from PIL import Image
 from base64 import encodebytes
 from src.tints.utils.json_encode import JSONEncoder
-from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
-from src.tints.cv.simulation.apply_foundation import foundation
+from src.tints.cv.simulation.apply_concealer import Concealer
 from src.tints.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
 import time
 import imutils
 from flask import Flask, render_template, url_for, request, Response
 import dlib
-from src.tints.settings import SHAPE_68_PATH,SHAPE_81_PATH
+from src.tints.settings import SHAPE_68_PATH
 
-foundationm = Blueprint('foundationm', __name__)
+concealerm = Blueprint('concealerm', __name__)
 
 detector = dlib.get_frontal_face_detector()
 face_pose_predictor = dlib.shape_predictor(SHAPE_68_PATH)
-face_pose_predictor_81 = dlib.shape_predictor(SHAPE_81_PATH)
 # This method executes before any API request
 
 
-@foundationm.before_request
+@concealerm.before_request
 def before_request():
-    print('Start eyeshadow API request')
+    print('Start concealer API request')
 
 # --------------------------------- generl defs
 
@@ -40,7 +38,7 @@ def get_response_image(image_path):
     return encoded_img
 
 # ------------------------------------ non general
-@foundationm.route('/api/makeup/image/foundation', methods=['POST'])
+@concealerm.route('/api/makeup/image/concealer', methods=['POST'])
 @cross_origin()
 def simulator_lip():
     # check if the post request has the file part
@@ -53,14 +51,14 @@ def simulator_lip():
     image_copy_name = 'simulated_image-{}.jpg'.format(str(user_id))
     user_image.save(os.path.join(SIMULATOR_INPUT, image_copy_name))
     user_image = skimage_io.imread(os.path.join(SIMULATOR_INPUT, image_copy_name))
-
     detected_faces = detector(user_image, 0)
     pose_landmarks = face_pose_predictor(user_image, detected_faces[0])
-    pose_landmarks81 = face_pose_predictor_81(user_image, detected_faces[0])
+
     landmarks_x = []
     landmarks_y = []
     padding =50
     face_resized_width = 250
+
 
     for face in detected_faces:
         x1 = face.left()
@@ -68,61 +66,54 @@ def simulator_lip():
         x2 = face.right()
         y2 = face.bottom()
 
-    height, width = user_image.shape[:2]
-    orignal_face_width = x2-x1
-    ratio = face_resized_width / orignal_face_width
-    new_padding = int(padding / ratio)
-    # new_padding_up = int(padding_up/ratio)
-    new_y1= max(y1-new_padding,0)
-    new_y2= min(y2+new_padding,height)
-    new_x1= max(x1-new_padding,0)
-    new_x2= min(x2+new_padding,width)
-    cropped_img = user_image[ new_y1:new_y2, new_x1:new_x2]
-    cropped_img = imutils.resize(cropped_img, width = (face_resized_width+2*padding))
+        height, width = user_image.shape[:2]
+        orignal_face_width = x2-x1
+        ratio = face_resized_width / orignal_face_width
+        new_padding = int(padding / ratio)
+        # new_padding_up = int(padding_up/ratio)
+        new_y1= max(y1-new_padding,0)
+        new_y2= min(y2+new_padding,height)
+        new_x1= max(x1-new_padding,0)
+        new_x2= min(x2+new_padding,width)
+        cropped_img = user_image[ new_y1:new_y2, new_x1:new_x2]
+        cropped_img = imutils.resize(cropped_img, width = (face_resized_width+2*padding))
 
-    landmarks_x81 = []
-    landmarks_y81 = []
-    for i in range(68):
-        landmarks_x.append(int(((pose_landmarks.part(i).x)-new_x1)*ratio))
-        landmarks_y.append(int(((pose_landmarks.part(i).y)-new_y1)*ratio))
-    for i in range(81):
-        landmarks_x81.append(int(((pose_landmarks81.part(i).x)-new_x1)*ratio))
-        landmarks_y81.append(int(((pose_landmarks81.part(i).y)-new_y1)*ratio))
+        for i in range(68):
+            landmarks_x.append(int(((pose_landmarks.part(i).x)-new_x1)*ratio))
+            landmarks_y.append(int(((pose_landmarks.part(i).y)-new_y1)*ratio))
 
     r_value = request.form.get('r_value')
     g_value = request.form.get('g_value')
     b_value = request.form.get('b_value')
 
-    foundation_makeup = foundation()
+    concealer_makeup = Concealer()
     
-    img = foundation_makeup.apply_foundation(
-        cropped_img,landmarks_x81 ,landmarks_y81, landmarks_x, landmarks_y, r_value, g_value, b_value, 81, 81, 0.7)
-    
+    img = concealer_makeup.apply_concealer(
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81, 0.7)
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]
     user_image_copy = user_image.copy()
     user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
     user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
+    predict_result_intense = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.7)
 
-    predict_result_intense = save_iamge(user_image_copy,r_value,g_value,b_value,"foundation", 0.7)
-
-    img = foundation_makeup.apply_foundation(
-        cropped_img,landmarks_x81, landmarks_y81,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81,0.5)
+    img = concealer_makeup.apply_concealer(
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81, 0.5)
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]
     user_image_copy = user_image.copy()
     user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
     user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
-    predict_result_medium = save_iamge(user_image_copy,r_value,g_value,b_value,"foundation",0.5)
+    predict_result_medium = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.5)
 
-    img = foundation_makeup.apply_foundation(
-        cropped_img,landmarks_x81, landmarks_y81,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81,0.3)
+    img = concealer_makeup.apply_concealer(
+        cropped_img,landmarks_x, landmarks_y, r_value, g_value, b_value,81, 81, 0.3)
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]
     user_image_copy = user_image.copy()
     user_image_copy[ new_y1:new_y1+cheight, new_x1:new_x1+cwidth] = img
     user_image_copy = cv2.cvtColor(user_image_copy, cv2.COLOR_BGR2RGB)
-    predict_result_fade = save_iamge(user_image_copy,r_value,g_value,b_value,"foundation",0.3)
+    predict_result_fade = save_iamge(user_image_copy,r_value,g_value,b_value,"concealer",0.3)
 
     result = [predict_result_intense,
               predict_result_medium, predict_result_fade]

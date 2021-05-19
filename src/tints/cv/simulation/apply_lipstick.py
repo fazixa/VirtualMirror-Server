@@ -14,7 +14,7 @@ import time
 import imageio
 
 
-class lipstick(object):
+class Lipstick(object):
 
     def __init__(self):
         """ Initiator method for class """
@@ -24,8 +24,6 @@ class lipstick(object):
 
         self.image = 0
         self.im_copy = 0
-        
-
 
         self.intensity = 0
         self.x = []
@@ -33,8 +31,9 @@ class lipstick(object):
         self.intensitymoist = 0.4
         self.x_all = []
         self.y_all = []
+        self.result = None
 
-    def get_lips(self,x, y):
+    def get_lips(self, x, y):
 
         """ Seprates corresponding lips points from all detected points
 
@@ -376,11 +375,11 @@ class lipstick(object):
         height,width = self.image.shape[:2]
         filter = np.zeros((height,width))
         cv2.fillConvexPoly(filter,np.array(c_[y, x],dtype = 'int32'),1)
-        filter = cv2.GaussianBlur(filter,(21,21),0)
+       
+        filter = cv2.GaussianBlur(filter,(81,81),0)
         kernel = np.ones((3,3),np.uint8)
         filter = cv2.erode(filter,kernel,iterations = 1)
 
-  
         alpha=np.zeros([height,width,3],dtype='float64')
         alpha[:,:,0]=filter
         alpha[:,:,1]=filter
@@ -389,7 +388,6 @@ class lipstick(object):
         
         mask = (alpha*self.im_copy+(1-alpha)*self.image).astype('uint8')
         cv2.imwrite('./data/mask.jpg',mask)
-        self.im_copy = (alpha*self.im_copy+(1-alpha)*self.image).astype('uint8')
 
     
 
@@ -426,7 +424,5 @@ class lipstick(object):
 
         self.x_all = x
         self.y_all = y
-
-
 
         return self.im_copy

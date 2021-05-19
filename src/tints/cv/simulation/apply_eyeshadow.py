@@ -116,9 +116,9 @@ class Eyeshadow(object):
         # gussian blur
         filter = np.zeros((self.height, self.width))
         cv2.fillConvexPoly(filter, np.array(c_[y, x], dtype='int32'), 1)
-        filter = cv2.GaussianBlur(filter, (51, 51), 0)
+        filter = cv2.GaussianBlur(filter, (41, 41), 0)
         # Erosion to reduce blur size
-        kernel = np.ones((31, 31), np.uint8)
+        kernel = np.ones((22, 22), np.uint8)
         filter = cv2.erode(filter, kernel, iterations=1)
         alpha = np.zeros([self.height, self.width, 3], dtype='float64')
         alpha[:, :, 0] = filter
