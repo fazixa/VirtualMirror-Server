@@ -46,7 +46,7 @@ def foundation_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
         w_frame,
         Globals.landmarks['81_landmarks_x'], Globals.landmarks['81_landmarks_y'],
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, k_h, k_w, intensity
+        r, g, b, k_h, k_w, 0.4
     )
     
     out_queue.append({
@@ -61,7 +61,7 @@ def blush_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     result = cheeks.apply_blush(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, intensity
+        r, g, b, 0.5
     )
 
     out_queue.append({
@@ -76,7 +76,7 @@ def eyeshadow_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     result = eyes.apply_eyeshadow(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, intensity
+        r, g, b, 0.7
     )
 
     out_queue.append({
@@ -90,7 +90,7 @@ def eyeliner_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     eye = Eyeliner(w_frame)
     result = eye.apply_eyeliner(
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, intensity
+        r, g, b, 1
     )
 
     out_queue.append({
@@ -103,7 +103,7 @@ def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> No
     lip = lipstick(w_frame)
     result = lip.apply_lipstick(
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, l_type, gloss
+        r, g, b, 0.7, l_type, gloss
     )
 
     out_queue.append({
@@ -118,7 +118,7 @@ def concealer_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
     result = face_con.apply_blush(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, k_h, k_w, intensity)
+        r, g, b, k_h, k_w, 0.5)
 
     out_queue.append({
         'index': 5,
