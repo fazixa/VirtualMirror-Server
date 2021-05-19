@@ -60,10 +60,23 @@ def clean_exit():
 @app.route('/enable/<makeup_type>', methods=['POST'])
 def enabel_makeup(makeup_type):
     print(makeup_type)
-    input_args = [makeup_type, *request.get_json().values()]
+    req_data = request.get_json()
+    input_args = [
+        makeup_type,
+        req_data.get('r_value'),
+        req_data.get('g_value'),
+        req_data.get('b_value'),
+        req_data.get('intensity'),
+        req_data.get('l_type'),
+        req_data.get('gloss'),
+        req_data.get('k_h'),
+        req_data.get('k_w')
+    ]
+    print(input_args)
     makeup_args = {x: y for x, y in zip(mutils.Globals.makeup_args, input_args) if y is not None}
+    print(makeup_args)
     mutils.enable_makeup(**makeup_args)
-    return f'{makeup_type} activated', 200
+    return makeup_type, 200
 
 
 @app.route('/disable/<makeup_type>', methods=['POST'])
