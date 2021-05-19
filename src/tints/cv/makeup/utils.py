@@ -31,6 +31,7 @@ class Globals:
     makeup_workers = {}
     makeup_args = []
     camera_index = 0
+    output_frame = None
     prev_time = 0
     output_frame = None
     frame_rate = 30

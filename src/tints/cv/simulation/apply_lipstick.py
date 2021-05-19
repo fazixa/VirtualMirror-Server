@@ -1,7 +1,9 @@
 from __future__ import division
 import cv2
+from matplotlib.colors import LightSource
 import numpy as np
 from numpy.linalg import eig, inv
+from numpy.ma.core import maximum_fill_value
 from scipy.interpolate import interp1d, splprep, splev
 from scipy.interpolate import InterpolatedUnivariateSpline
 from pylab import *
@@ -26,7 +28,7 @@ class Lipstick(object):
         self.intensity = 0
         self.x = []
         self.y = []
-        self.intensitymoist = 0.3
+        self.intensitymoist = 0.4
         self.x_all = []
         self.y_all = []
         self.result = None
@@ -219,7 +221,7 @@ class Lipstick(object):
         f2 = interp1d(lx, ly, kind=k1)
         return f2, unew
        
-    def moist(self, x2,y2, r, g, b):
+    def moist(self, x,y, r, g, b):
         """  finds all the points fillig the lips
         Args:
             param1 : if motion is detected this parameter is the X cordinate of the lower lip otherwise the X cordinates of the previous frame gloss parts must be passed
@@ -241,48 +243,87 @@ class Lipstick(object):
         """
 
 
-        max=0
-        k1=[]
-        f1=[]
+  
+
+        val = color.rgb2lab((self.im_copy[x, y] / 255.).reshape(len(x), 1, 3)).reshape(len(x), 3)
 
 
-
-
-        k1 = x2
-        f1 = y2
-
-        val = color.rgb2lab((self.image[k1, f1] / 255.).reshape(len(k1), 1, 3)).reshape(len(k1), 3)
         L, A, B = mean(val[:, 0]), mean(val[:, 1]), mean(val[:, 2])
         L1, A1, B1 = color.rgb2lab(np.array((r / 255., g / 255., b / 255.)).reshape(1, 1, 3)).reshape(3, )
         ll, aa, bb = L1 - L, A1 - A, B1 - B
-        val[:, 0] +=ll*self.intensitymoist
-        val[:, 1] +=aa*self.intensitymoist
-        val[:, 2] += bb*self.intensitymoist
-        self.image[k1, f1] = color.lab2rgb(val.reshape(len(k1), 1, 3)).reshape(len(f1), 3) * 255
 
-        #Change HSV, making it more natural,optional
-        hsv_val = cv2.cvtColor(self.image,cv2.COLOR_BGR2HSV)
-        hsv_val2=hsv_val[k1,f1]
-        L3,A3,B3=mean(hsv_val2[:, 0]), mean(hsv_val2[:, 1]),mean(hsv_val2[:, 2])
-        hsv_val2[:,0]-=0
-        hsv_val2[:,1]-=0
-        hsv_val2[:,2]+=0
 
-        #guassian blur
-        height,width = self.image.shape[:2]
-        filter = np.zeros((height,width))
-        cv2.fillConvexPoly(filter,np.array(c_[f1, k1],dtype = 'int32'),1)
-        filter = cv2.GaussianBlur(filter,(31,31),0)
+        Li = val[:, 0]
+        light_points = sorted(Li)[-100:]
+        min_val = min(light_points)
+        max_val = max(light_points)
 
-        # Erosion to reduce blur size
-        kernel = np.ones((10,10),np.uint8)
+
+        index = []
+        for i in range(len(val[:, 0])):
+            if (val[i, 0] <= max_val and val[i, 0] >=min_val):
+                val[i, 0]+= ll*self.intensitymoist
+                index.append(i)
+        
+        r_img = (self.im_copy[x, y][:, 0]).flatten()
+
+        light_points = sorted(Li)[-100:]
+        min_val = min(light_points)
+        max_val = max(light_points)
+
+        
+
+        
+   
+
+        # height,width = self.image.shape[:2]
+        # filter = np.zeros((height,width))
+        # cv2.fillConvexPoly(filter,np.array(c_[ y, x],dtype = 'int32'),1)
+        # filter = cv2.GaussianBlur(filter,(81,81),0)
+
+        # # Erosion to reduce blur size
+        # kernel = np.ones((20,20),np.uint8)
+        # filter = cv2.erode(filter,kernel,iterations = 1)
+        # alpha=np.zeros([height,width,3],dtype='float64')
+        # alpha[:,:,0]=filter
+        # alpha[:,:,1]=filter
+        # alpha[:,:,2]=filter
+        # self.im_copy = (alpha*self.image+(1-alpha)*self.im_copy).astype('uint8')
+
+
+        # val[:, 0] +=ll*self.intensitymoist
+        # val[:, 1] +=aa*self.intensitymoist
+        # val[:, 2] += bb*self.intensitymoist
+        
+        self.im_copy[x, y] = color.lab2rgb(val).reshape(len(x), 3) * 255
+
+
+        # print(min_val)
+
+        # L, A, B = mean(val[:, 0]), mean(val[:, 1]), mean(val[:, 2])
+        # L1, A1, B1 = color.rgb2lab(np.array((r / 255., g / 255., b / 255.)).reshape(1, 1, 3)).reshape(3, )
+        # ll, aa, bb = L1 - L, A1 - A, B1 - B
+        # val[:, 0] +=ll*self.intensitymoist
+        # val[:, 1] +=aa*self.intensitymoist
+        # val[:, 2] += bb*self.intensitymoist
+        # self.image[k1, f1] = color.lab2rgb(val.reshape(len(k1), 1, 3)).reshape(len(f1), 3) * 255
+
+
+        # #guassian blur
+        # height,width = self.image.shape[:2]
+        filter = np.zeros((self.height,self.width))
+        # cv2.fillConvexPoly(filter,np.array(c_[f1, k1],dtype = 'int32'),1)
+        # filter = cv2.GaussianBlur(filter,(31,31),0)
+
+        # # Erosion to reduce blur size
+        kernel = np.ones((50,50),np.uint8)
         filter = cv2.erode(filter,kernel,iterations = 1)
-        alpha=np.zeros([height,width,3],dtype='float64')
+        alpha=np.zeros([self.height,self.width,3],dtype='float64')
         alpha[:,:,0]=filter
         alpha[:,:,1]=filter
         alpha[:,:,2]=filter
-        self.im_copy = (alpha*self.image+(1-alpha)*self.im_copy).astype('uint8')
-        return x2, y2
+        # self.im_copy = (alpha*self.image+(1-alpha)*self.im_copy).astype('uint8')
+        return 
 
 
     
@@ -296,39 +337,12 @@ class Lipstick(object):
             param3 : X cordinates of the lower lip
             param4 : Y cordinates of the lower lip  
         """
-        #Change HSV, making it more natural,optional
-        # hsv_val = cv2.cvtColor(self.im_copy,cv2.COLOR_BGR2HSV)
-
-
-        # hsv_val=color.rgb2hsv(self.im_copy)
-        # hsv_val2=hsv_val[x,y]
-        # L3,A3,B3=mean(hsv_val2[:, 0]), mean(hsv_val2[:, 1]),mean(hsv_val2[:, 2])
-        # hsv_val2[:,0]-=L3
-        # hsv_val2[:,1]-=A3
-        # hsv_val2[:,2]+=B3
-
-        # hsv_val[x,y]=hsv_val2
-        # self.im_copy = color.hsv2rgb(hsv_val)
-
-
-        # self.im_copy=cv2.cvtColor(hsv_val,cv2.COLOR_HSV2BGR)
-    
 
         #guassian blur
         height,width = self.image.shape[:2]
         filter = np.zeros((height,width))
         cv2.fillConvexPoly(filter,np.array(c_[y, x],dtype = 'int32'),1)
-
-       
-
         filter = cv2.GaussianBlur(filter,(31,31),0)
-
-        # print("hi")
-        
-
-        # cv2.imshow('gussian', filter)
-
-        # Erosion to reduce blur size
         kernel = np.ones((10,10),np.uint8)
         filter = cv2.erode(filter,kernel,iterations = 1)
 
@@ -348,29 +362,37 @@ class Lipstick(object):
 
     def fill_solids(self,x,y):
         
-        """  fills lip with solid color
+        """  fills lip with soft color
 
         Args:
             param1 : X cordinates of the lips
             param2 : Y cordinates of the lips
+            param3 : X cordinates of the lower lip
+            param4 : Y cordinates of the lower lip  
         """
-  
+
+        #guassian blur
         height,width = self.image.shape[:2]
         filter = np.zeros((height,width))
         cv2.fillConvexPoly(filter,np.array(c_[y, x],dtype = 'int32'),1)
        
         filter = cv2.GaussianBlur(filter,(81,81),0)
+        kernel = np.ones((3,3),np.uint8)
+        filter = cv2.erode(filter,kernel,iterations = 1)
+
         alpha=np.zeros([height,width,3],dtype='float64')
         alpha[:,:,0]=filter
         alpha[:,:,1]=filter
         alpha[:,:,2]=filter
-        self.im_copy = (alpha * self.image + (1 - alpha) * self.im_copy).astype('uint8')
 
+        
+        mask = (alpha*self.im_copy+(1-alpha)*self.image).astype('uint8')
+        cv2.imwrite('./data/mask.jpg',mask)
 
     
 
 
-    def apply_lipstick(self, image, x, y, r, g, b, intensity, lipstick_type, gloss):
+    def apply_lipstick(self,img, x,y, r, g, b, intensity, lipstick_type, gloss):
         """apllies lipstick on thedetected face
 
         Args:
@@ -385,15 +407,15 @@ class Lipstick(object):
         Returns: 
             the imagee of the face with lipstick applied   
         """
-
-        self.image = image
-        self.im_copy = image.copy()
+        self.image = img
+        self.im_copy = img.copy()
         self.height, self.width = self.image.shape[:2]
         self.intensity = intensity
-   
         points = self.get_lips(x, y)
         o_l, o_u, i_u, i_l, outter_x, inner_x =self.draw_curves(points)
-        x , y , lowerx, lowery= self.fill_lips( o_l, o_u, i_u, i_l, outter_x, inner_x )
+        x , y , lowerx,lowery= self.fill_lips( o_l, o_u, i_u, i_l, outter_x, inner_x )
+        if(gloss):
+            self.moist(lowerx, lowery, 220 , 220, 220)
         self.change_rgb(x,y, r, g, b)
         if(lipstick_type == "hard"):
             self.fill_solids(x,y)
@@ -403,5 +425,4 @@ class Lipstick(object):
         self.x_all = x
         self.y_all = y
 
-        # self.moist(lowerx, lowery, motion,220 , 220, 220)
         return self.im_copy
