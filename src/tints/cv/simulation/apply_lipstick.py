@@ -375,8 +375,8 @@ class Lipstick(object):
         height,width = self.image.shape[:2]
         filter = np.zeros((height,width))
         cv2.fillConvexPoly(filter,np.array(c_[y, x],dtype = 'int32'),1)
-        filter = cv2.GaussianBlur(filter,(21,21),0)
-        kernel = np.ones((3,3),np.uint8)
+        filter = cv2.GaussianBlur(filter,(31,31),0)
+        kernel = np.ones((5,5),np.uint8)
         filter = cv2.erode(filter,kernel,iterations = 1)
 
   

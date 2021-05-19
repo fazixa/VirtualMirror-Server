@@ -73,7 +73,7 @@ def concealer_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
     result = Globals.concealer.apply_concealer(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, 0.5
+        r, g, b, k_h, k_w, 0.5
     )
 
     out_queue.append({
@@ -128,7 +128,7 @@ def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> No
     result = Globals.lipstick.apply_lipstick(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, 0.5, l_type, gloss)
+        r, g, b, 0.8, l_type, gloss)
 
     out_queue.append({
         'index': 5,
