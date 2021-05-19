@@ -55,7 +55,6 @@ class Concealer(object):
         self.__fill_blush_color(intensity)
         self.__smoothen_blush(face_top_x, face_top_y, left_cheek_x, face_bottom_y, ksize_h, ksize_w)
 
-
         self.x_all = np.concatenate((face_top_y, face_bottom_y))
         self.y_all = np.concatenate((face_top_x, left_cheek_x))
 

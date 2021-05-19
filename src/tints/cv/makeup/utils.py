@@ -31,6 +31,7 @@ class Globals:
     makeup_workers = {}
     makeup_args = []
     camera_index = 0
+    output_frame = None
     prev_time = 0
     output_frame = None
     frame_rate = 30
@@ -319,16 +320,16 @@ def apply_makeup_video():
         Globals.prev_frame = gray.copy()
 
         # The following line is for testing with cv2 imshow
-        return frame
+        # return frame
 
-        # (flag, encodedImage) = cv2.imencode(".png", frame)
+        (flag, encodedImage) = cv2.imencode(".png", frame)
         
-        # # ensure the frame was successfully encoded
-        # if not flag:
-        #     continue
-        # # yield the output frame in the byte format
-        # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-        #     bytearray(encodedImage) + b'\r\n')
+        # ensure the frame was successfully encoded
+        if not flag:
+            continue
+        # yield the output frame in the byte format
+        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+            bytearray(encodedImage) + b'\r\n')
 
 
 
