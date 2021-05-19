@@ -78,7 +78,9 @@ class Blush(object):
         mask = np.zeros((self.height, self.width))
         cv2.fillConvexPoly(mask, np.array(c_[x_right, y_right], dtype='int32'), 1)
         cv2.fillConvexPoly(mask, np.array(c_[x_left, y_left], dtype='int32'), 1)
-        mask = cv2.GaussianBlur(mask, (51, 51), 0) * intensity
+        mask = cv2.GaussianBlur(mask, (81, 81), 0) * intensity
+        kernel = np.ones((15, 15), np.uint8)
+        mask = cv2.erode(mask, kernel, iterations=1)
         # print(np.array(c_[x_right, y_right])[:, 0])
         val = cv2.cvtColor(self.im_copy, cv2.COLOR_RGB2LAB).astype(float)
 

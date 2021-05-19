@@ -9,8 +9,8 @@ from src.tints.cv.simulation.apply_blush import Blush
 from src.tints.cv.simulation.apply_lipstick import Lipstick
 from src.tints.cv.simulation.apply_concealer import Concealer
 from src.tints.cv.simulation.apply_foundation import Foundation
-from .eyeliner import Eyeliner
-from multiprocessing import Process, Manager
+from src.tints.cv.simulation.apply_eyeliner import eyeliner
+# from .eyeliner import Eyeliner
 
 class Color:
     def __init__(self, r=0, g=0, b=0, intensity=.7):
@@ -99,7 +99,7 @@ def eyeshadow_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     result = Globals.eyeshadow.apply_eyeshadow(
         w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, intensity
+        r, g, b, 0.85
     )
 
     out_queue.append({
@@ -110,10 +110,11 @@ def eyeshadow_worker(w_frame, r, g, b, intensity, out_queue) -> None:
 
 
 def eyeliner_worker(w_frame, r, g, b, intensity, out_queue) -> None:
-    eye = Eyeliner(w_frame)
+    eye = eyeliner()
     result = eye.apply_eyeliner(
+        w_frame, 
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, intensity
+        r, g, b, 1
     )
 
     out_queue.append({
@@ -123,16 +124,16 @@ def eyeliner_worker(w_frame, r, g, b, intensity, out_queue) -> None:
     })
 
 def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> None:
-    lip = Lipstick(w_frame)
-    result = lip.apply_lipstick(
+    result = Globals.Lipstick.apply_lipstick(
+        w_frame,
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, l_type, gloss
+        r, g, b, intensity, l_type, gloss
     )
 
     out_queue.append({
         'index': 5,
         'image': result,
-        'range': (lip.x_all, lip.y_all)
+        'range': (Globals.Lipstick.x_all, Globals.Lipstick.y_all)
     })
 
 
@@ -198,6 +199,9 @@ def apply_makeup_video():
         Globals.prev_time = time.time()
 
         _, frame = Globals.cap.read()
+
+        # frame = imutils.resize(frame, width = 1000)
+
         Globals.output_frame = frame
 
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
