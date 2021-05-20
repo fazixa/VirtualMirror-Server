@@ -203,6 +203,10 @@ def join_makeup_workers_static(w_frame):
                 'range': (worker['instance'].x_all, worker['instance'].y_all)
             })
     
+    if Globals.makeup_workers['foundation_worker']['enabled']:
+        shared_list.pop()
+        w_frame = Globals.foundation.apply_blur_only(w_frame, Globals.foundation.x_all, Globals.foundation.y_all)
+
     while len(shared_list) > 0:
         temp_img = shared_list.pop()
         (range_x, range_y), temp_img = temp_img['range'], temp_img['image']
@@ -338,16 +342,16 @@ def apply_makeup_video():
         Globals.prev_frame = gray.copy()
 
         # The following line is for testing with cv2 imshow
-        # return frame
+        return frame
 
-        (flag, encodedImage) = cv2.imencode(".png", frame)
+        # (flag, encodedImage) = cv2.imencode(".png", frame)
         
-        # ensure the frame was successfully encoded
-        if not flag:
-            continue
-        # yield the output frame in the byte format
-        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-            bytearray(encodedImage) + b'\r\n')
+        # # ensure the frame was successfully encoded
+        # if not flag:
+        #     continue
+        # # yield the output frame in the byte format
+        # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+        #     bytearray(encodedImage) + b'\r\n')
 
 
 
