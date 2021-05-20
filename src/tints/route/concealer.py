@@ -82,9 +82,9 @@ def simulator_lip():
             landmarks_x.append(int(((pose_landmarks.part(i).x)-new_x1)*ratio))
             landmarks_y.append(int(((pose_landmarks.part(i).y)-new_y1)*ratio))
 
-    r_value = request.form.get('r_value')
-    g_value = request.form.get('g_value')
-    b_value = request.form.get('b_value')
+    r_value = int(request.form.get('r_value'))
+    g_value = int(request.form.get('g_value'))
+    b_value = int(request.form.get('b_value'))
 
     concealer_makeup = Concealer()
     

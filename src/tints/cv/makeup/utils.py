@@ -31,12 +31,13 @@ class Globals:
     landmarks = {}
     makeup_workers = {}
     makeup_args = []
-    camera_index = 1
+    camera_index = 0
     output_frame = None
     prev_time = 0
     output_frame = None
     frame_rate = 30
     padding = 50
+    padding_up = 70
     face_resized_width = 250
     video_feed_enabled = False
     # Motion Detection Vars
@@ -65,7 +66,7 @@ def foundation_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
         w_frame,
         Globals.landmarks['81_landmarks_x'], Globals.landmarks['81_landmarks_y'],
         Globals.landmarks['68_landmarks_x'], Globals.landmarks['68_landmarks_y'],
-        r, g, b, k_h, k_w, 0.4
+        r, g, b, k_h, k_w, 0.2
     )
     
     out_queue.append({
@@ -249,7 +250,7 @@ def apply_makeup_video():
 
         for contour in cnts: 
             temp = cv2.contourArea(contour)
-            if temp < 800:  
+            if temp < 200:  
                 continue
             # print(temp)
             Globals.motion_detected = True
@@ -282,7 +283,8 @@ def apply_makeup_video():
                     orignal_face_width = x2-x1
                     ratio = Globals.face_resized_width / orignal_face_width
                     new_padding = int(Globals.padding / ratio)
-                    Globals.new_y1 = new_y1 = max(y1-new_padding,0)
+                    new_padding_up = int(Globals.padding_up / ratio)
+                    Globals.new_y1 = new_y1 = max(y1-new_padding_up,0)
                     Globals.new_y2 = new_y2 = min(y2+new_padding,height)
                     Globals.new_x1 = new_x1 = max(x1-new_padding,0)
                     Globals.new_x2 = new_x2 = min(x2+new_padding,width)

@@ -25,7 +25,7 @@ face_pose_predictor_81 = dlib.shape_predictor(SHAPE_81_PATH)
 
 @foundationm.before_request
 def before_request():
-    print('Start eyeshadow API request')
+    print('Start foundation API request')
 
 # --------------------------------- generl defs
 
@@ -95,7 +95,7 @@ def simulator_lip():
     foundation_makeup = Foundation()
     
     img = foundation_makeup.apply_foundation(
-        cropped_img,landmarks_x81 ,landmarks_y81, landmarks_x, landmarks_y, r_value, g_value, b_value, 81, 81, 0.7)
+        cropped_img,landmarks_x81 ,landmarks_y81, landmarks_x, landmarks_y, r_value, g_value, b_value, 81, 81, 1.5)
     
     img = imutils.resize(img, width=new_x2-new_x1)
     cheight, cwidth = img.shape[:2]

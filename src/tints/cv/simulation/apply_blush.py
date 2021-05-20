@@ -85,9 +85,9 @@ class Blush(object):
 
 
     def apply_blush(self, img, landmarks_x, landmarks_y, r, g, b, intensity):
-        self.r = r
-        self.g = g
-        self.b = b
+        self.r = int(r)
+        self.g = int(g)
+        self.b = int(b)
         self.intensity = intensity
         self.image = img
         self.im_copy = img.copy()
@@ -106,7 +106,7 @@ class Blush(object):
         self.x_all = np.concatenate((x_left_all, x_right_all))
 
         self.apply_color(self.x_all, self.y_all )
-        self.apply_blur(self.x_all, self.y_all )
+        # self.apply_blur(self.x_all, self.y_all )
         # self.blush(x_right, y_right, x_left, y_left)
 
         return self.im_copy

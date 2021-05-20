@@ -252,7 +252,7 @@ class Lipstick(object):
         L1, A1, B1 = color.rgb2lab(np.array((r / 255., g / 255., b / 255.)).reshape(1, 1, 3)).reshape(3, )
         ll, aa, bb = L1 - L, A1 - A, B1 - B
 
-        length = int(len(x)/5)
+        length = int(len(x)/6)
         Li = val[:, 0]
         light_points = sorted(Li)[-length:]
         min_val = min(light_points)
@@ -316,7 +316,7 @@ class Lipstick(object):
         # filter = cv2.GaussianBlur(filter,(31,31),0)
 
         # # Erosion to reduce blur size
-        kernel = np.ones((50,50),np.uint8)
+        kernel = np.ones((70,70),np.uint8)
         filter = cv2.erode(filter,kernel,iterations = 1)
         alpha=np.zeros([self.height,self.width,3],dtype='float64')
         alpha[:,:,0]=filter
