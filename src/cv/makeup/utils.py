@@ -1,3 +1,9 @@
+"""
+.. module:: utils
+   :synopsis: All the algorithms for simulating lipstick are implemented here
+.. moduleauthor:: Ali Goldani <github.com/Galiold>
+"""
+
 import cv2
 import imutils
 import dlib
@@ -62,6 +68,41 @@ class Globals:
 
 
 def foundation_worker(w_frame, r, g, b, intensity, k_h, k_w, out_queue) -> None:
+    """
+        **Get List of Teachers**
+        
+        This function allows users to get a list of teachers and the subjects they're teaching.
+
+        :return: teacher's information in json and http status code
+
+        - Example::
+
+              curl -X GET http://localhost:5000/ -H 'cache-control: no-cache' -H 'content-type: application/json'
+        
+        - Expected Success Response::
+        
+            HTTP Status Code: 200
+            {
+                "Teachers": [
+                    {
+                        "id": 1,
+                        "name": "Jane Vargas",
+                        "subject": "Science"
+                    },
+                    {
+                        "id": 2,
+                        "name": "John Doe",
+                        "subject": "Math"
+                    },
+                    {
+                        "id": 3,
+                        "name": "Jenny Lisa",
+                        "subject": "English"
+                    }
+                ]
+            }
+    """
+
     result = Globals.foundation.apply_foundation(
         w_frame,
         Globals.landmarks['81_landmarks_x'], Globals.landmarks['81_landmarks_y'],

@@ -20,6 +20,7 @@ scikit-image = "*"
 flask-bcrypt = "*"
 flask-jwt-extended = "*"
 imutils = "*"
+sphinx = "*"
 
 [dev-packages]
 
