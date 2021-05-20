@@ -35,7 +35,7 @@ class Foundation(object):
         self.y_all = []
 
 
-    def apply_foundation(self, img, landmark_x, landmark_y, landmark_x68,landmark_y68, r_value, g_value, b_value, ksize_h, ksize_w, intensity):
+    def apply_foundation(self, img, landmark_x, landmark_y, landmark_x68,landmark_y68, r_value, g_value, b_value, intensity, ksize_h, ksize_w):
         self.r = int(r_value)
         self.g = int(g_value)
         self.b = int(b_value)
@@ -81,6 +81,8 @@ class Foundation(object):
         face_top_y_81, face_top_x_81 = self.get_interior_points(
             face_top_x_81, face_top_y_81)
 
+        self.y_all = np.concatenate((face_top_x, face_top_x_81)) 
+        self.x_all = np.concatenate((face_top_y, face_top_y_81))
         # upper_x = np.r_[landmark_x68[14],
         #      landmark_x68[45], landmark_x68[46], landmark_x68[47],
         #      landmark_x68[42],  landmark_x68[27], landmark_x68[39] , landmark_x68[40] ,
@@ -104,8 +106,6 @@ class Foundation(object):
 
         end = time.time()
         print(end-start)
-        self.y_all = np.concatenate((face_top_x, face_top_x_81)) 
-        self.x_all = np.concatenate((face_top_y, face_top_y_81))
         # for x, y in zip(self.x_all, self.y_all):
         #      self.im_copy = cv2.circle(img, (y, x), 1, (0, 0, 255), -1)
 
@@ -236,3 +236,35 @@ class Foundation(object):
         val[:, :, 2] = np.clip(val[:, :, 2] + lab[:, :, 2], -127, 128)
 
         self.im_copy = (color.lab2rgb(val) * 255).astype(np.uint8)
+
+
+    def apply_blur_only(self, new_img, x, y):
+        intensity = self.intensity
+        # Create blush shape
+        mask = np.zeros((self.height, self.width))
+        cv2.fillConvexPoly(mask, np.array(c_[y, x], dtype='int32'), 1)
+     
+        mask = cv2.GaussianBlur(mask, (81, 81), 0) * intensity
+        kernel = np.ones((35, 35), np.uint8)
+        mask = cv2.erode(mask, kernel, iterations=1)
+        # print(np.array(c_[x_right, y_right])[:, 0])
+        val = cv2.cvtColor(new_img, cv2.COLOR_RGB2LAB).astype(float)
+
+        val[:, :, 0] = val[:, :, 0] / 255. * 100.
+        val[:, :, 1] = val[:, :, 1] - 128.
+        val[:, :, 2] = val[:, :, 2] - 128.
+        print(self.r)
+        LAB = color.rgb2lab(np.array((float(self.r) / 255., float(self.g) / 255., float(self.b) / 255.)).reshape(1, 1, 3)).reshape(3, )
+        mean_val = np.mean(np.mean(val, axis=0), axis=0)
+
+
+        mask = np.array([mask, mask, mask])
+        mask = np.transpose(mask, (1, 2, 0))
+
+        lab = np.multiply((LAB - mean_val), mask)
+
+        val[:, :, 0] = np.clip(val[:, :, 0] + lab[:, :, 0], 0, 100)
+        val[:, :, 1] = np.clip(val[:, :, 1] + lab[:, :, 1], -127, 128)
+        val[:, :, 2] = np.clip(val[:, :, 2] + lab[:, :, 2], -127, 128)
+
+        return (color.lab2rgb(val) * 255).astype(np.uint8)

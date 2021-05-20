@@ -150,7 +150,7 @@ Globals.makeup_workers = {
     'eyeshadow_worker':     { 'function': eyeshadow_worker,     'instance': Globals.eyeshadow,  'args': [], 'enabled': False },
     'blush_worker':         { 'function': blush_worker,         'instance': Globals.blush,      'args': [], 'enabled': False },
     'concealer_worker':     { 'function': concealer_worker,     'instance': Globals.concealer,  'args': [], 'enabled': False },
-    'foundation_worker':    { 'function': foundation_worker,    'instance': Globals.foundation, 'args': [], 'enabled': False },
+    'foundation_worker':    { 'function': foundation_worker,    'instance': Globals.foundation, 'args': [], 'enabled': False, 'enabled_first': False },
 }
 
 
@@ -189,6 +189,7 @@ def join_makeup_workers(w_frame):
             return cv2.cvtColor(final_image, cv2.COLOR_RGB2BGR)
 
     return cv2.cvtColor(w_frame, cv2.COLOR_RGB2BGR)
+    # return w_frame
 
 
 def join_makeup_workers_static(w_frame):
@@ -203,6 +204,9 @@ def join_makeup_workers_static(w_frame):
                 'range': (worker['instance'].x_all, worker['instance'].y_all)
             })
     
+    if Globals.makeup_workers['foundation_worker']['enabled_first']:
+        w_frame = Globals.foundation.apply_blur_only(w_frame, Globals.foundation.x_all, Globals.foundation.y_all)
+
     while len(shared_list) > 0:
         temp_img = shared_list.pop()
         (range_x, range_y), temp_img = temp_img['range'], temp_img['image']
@@ -250,7 +254,7 @@ def apply_makeup_video():
 
         for contour in cnts: 
             temp = cv2.contourArea(contour)
-            if temp < 200:  
+            if temp < 700:  
                 continue
             # print(temp)
             Globals.motion_detected = True
@@ -301,15 +305,24 @@ def apply_makeup_video():
                     Globals.landmarks['68_landmarks_x'] = landmarks_x_68
                     Globals.landmarks['68_landmarks_y'] = landmarks_y_68
 
-                    if Globals.makeup_workers['foundation_worker']['enabled']:
+                    if Globals.makeup_workers['foundation_worker']['enabled_first']:
                         pose_landmarks = Globals.face_pose_predictor_81(gray, face)
 
                         for i in range(81):
                             landmarks_x_81.append(int(((pose_landmarks.part(i).x) - new_x1) * ratio))
                             landmarks_y_81.append(int(((pose_landmarks.part(i).y) - new_y1) * ratio))
 
-                        Globals.landmarks['81_landmarks_x'] = landmarks_x_81
-                        Globals.landmarks['81_landmarks_y'] = landmarks_y_81
+                        # Globals.landmarks['81_landmarks_x'] = landmarks_x_81
+                        # Globals.landmarks['81_landmarks_y'] = landmarks_y_81
+
+                        # print(*Globals.makeup_workers['foundation_worker']['args'])
+
+                        cropped_img = Globals.foundation.apply_foundation(
+                            cropped_img,
+                            landmarks_x_81, landmarks_y_81,
+                            landmarks_x_68, landmarks_y_68,
+                            *Globals.makeup_workers['foundation_worker']['args']
+                        )
 
                     filter_res = join_makeup_workers(cropped_img)
 
@@ -355,22 +368,22 @@ def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, lipstick_type='ha
     Globals.motion_detected = True
     
     if makeup_type == 'eyeshadow':
-        Globals.makeup_workers['eyeshadow_worker']['args'] = [*Color(r, g, b, intensity).values()]
+        Globals.makeup_workers['eyeshadow_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['eyeshadow_worker']['enabled'] = True
     elif makeup_type == 'lipstick':
-        Globals.makeup_workers['lipstick_worker']['args'] = [*Color(r, g, b, intensity).values(), lipstick_type, gloss]
+        Globals.makeup_workers['lipstick_worker']['args'] = [r, g, b, intensity, lipstick_type, gloss]
         Globals.makeup_workers['lipstick_worker']['enabled'] = True
     elif makeup_type == 'blush':
-        Globals.makeup_workers['blush_worker']['args'] = [*Color(r, g, b, intensity).values()]
+        Globals.makeup_workers['blush_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['blush_worker']['enabled'] = True
     elif makeup_type == 'concealer':
-        Globals.makeup_workers['concealer_worker']['args'] = [*Color(r, g, b, intensity).values(), k_h, k_w]
+        Globals.makeup_workers['concealer_worker']['args'] = [r, g, b, intensity, k_h, k_w]
         Globals.makeup_workers['concealer_worker']['enabled'] = True
     elif makeup_type == 'foundation':
-        Globals.makeup_workers['foundation_worker']['args'] = [*Color(r, g, b, intensity).values(), k_h, k_w]
-        Globals.makeup_workers['foundation_worker']['enabled'] = True
+        Globals.makeup_workers['foundation_worker']['args'] = [r, g, b, intensity, k_h, k_w]
+        Globals.makeup_workers['foundation_worker']['enabled_first'] = True
     elif makeup_type == 'eyeliner':
-        Globals.makeup_workers['eyeliner_worker']['args'] = [*Color(r, g, b, intensity).values()]
+        Globals.makeup_workers['eyeliner_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['eyeliner_worker']['enabled'] = True
 
 
@@ -389,7 +402,7 @@ def disable_makeup(makeup_type):
     elif makeup_type == 'concealer':
         Globals.makeup_workers['concealer_worker']['enabled'] = False
     elif makeup_type == 'foundation':
-        Globals.makeup_workers['foundation_worker']['enabled'] = False
+        Globals.makeup_workers['foundation_worker']['enabled_first'] = False
     elif makeup_type == 'eyeliner':
         Globals.makeup_workers['eyeliner_worker']['enabled'] = False
 
