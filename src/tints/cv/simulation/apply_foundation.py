@@ -35,7 +35,7 @@ class Foundation(object):
         self.y_all = []
 
 
-    def apply_foundation(self, img, landmark_x, landmark_y, landmark_x68,landmark_y68, r_value, g_value, b_value, ksize_h, ksize_w, intensity):
+    def apply_foundation(self, img, landmark_x, landmark_y, landmark_x68,landmark_y68, r_value, g_value, b_value, intensity, ksize_h, ksize_w):
         self.r = int(r_value)
         self.g = int(g_value)
         self.b = int(b_value)
