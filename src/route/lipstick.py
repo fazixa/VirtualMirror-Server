@@ -5,15 +5,15 @@ from flask import Flask, request, send_from_directory, jsonify, Blueprint
 from flask_cors import cross_origin
 from PIL import Image
 from base64 import encodebytes
-from src.tints.utils.json_encode import JSONEncoder
-from src.tints.cv.simulation.apply_lipstick import Lipstick
-from src.tints.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
+# from src.tints.utils.json_encode import JSONEncoder
+from src.cv.simulation.apply_lipstick import Lipstick
+from src.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import cv2
 import time
 import imutils
 from flask import Flask, render_template, url_for, request, Response
 import dlib
-from src.tints.settings import SHAPE_68_PATH
+from src.settings import SHAPE_68_PATH
 
 lipstickm = Blueprint('lipstickm', __name__)
 
