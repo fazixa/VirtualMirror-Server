@@ -3,8 +3,8 @@ import imutils
 import dlib
 import time
 import threading
+import traceback
 
-from imutils.convenience import get_opencv_major_version
 from src.tints.settings import SHAPE_68_PATH, SHAPE_81_PATH
 from src.tints.cv.simulation.apply_foundation import Foundation
 from src.tints.cv.simulation.apply_concealer import Concealer
@@ -12,7 +12,6 @@ from src.tints.cv.simulation.apply_blush import Blush
 from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
 from src.tints.cv.simulation.apply_eyeliner import Eyeliner
 from src.tints.cv.simulation.apply_lipstick import Lipstick
-import traceback
 
 class Color:
     def __init__(self, r=0, g=0, b=0, intensity=.7):
@@ -32,7 +31,7 @@ class Globals:
     landmarks = {}
     makeup_workers = {}
     makeup_args = []
-    camera_index = 0
+    camera_index = 1
     output_frame = None
     prev_time = 0
     output_frame = None
