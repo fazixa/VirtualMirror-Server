@@ -5,13 +5,13 @@ import time
 import threading
 import traceback
 
-from src.tints.settings import SHAPE_68_PATH, SHAPE_81_PATH
-from src.tints.cv.simulation.apply_foundation import Foundation
-from src.tints.cv.simulation.apply_concealer import Concealer
-from src.tints.cv.simulation.apply_blush import Blush
-from src.tints.cv.simulation.apply_eyeshadow import Eyeshadow
-from src.tints.cv.simulation.apply_eyeliner import Eyeliner
-from src.tints.cv.simulation.apply_lipstick import Lipstick
+from src.settings import SHAPE_68_PATH, SHAPE_81_PATH
+from src.cv.simulation.apply_foundation import Foundation
+from src.cv.simulation.apply_concealer import Concealer
+from src.cv.simulation.apply_blush import Blush
+from src.cv.simulation.apply_eyeshadow import Eyeshadow
+from src.cv.simulation.apply_eyeliner import Eyeliner
+from src.cv.simulation.apply_lipstick import Lipstick
 
 class Color:
     def __init__(self, r=0, g=0, b=0, intensity=.7):
@@ -351,16 +351,16 @@ def apply_makeup_video():
         Globals.prev_frame = gray.copy()
 
         # The following line is for testing with cv2 imshow
-        # return frame
+        return frame
 
-        (flag, encodedImage) = cv2.imencode(".png", frame)
+        # (flag, encodedImage) = cv2.imencode(".png", frame)
         
-        # ensure the frame was successfully encoded
-        if not flag:
-            continue
-        # yield the output frame in the byte format
-        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-            bytearray(encodedImage) + b'\r\n')
+        # # ensure the frame was successfully encoded
+        # if not flag:
+        #     continue
+        # # yield the output frame in the byte format
+        # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+        #     bytearray(encodedImage) + b'\r\n')
 
 
 

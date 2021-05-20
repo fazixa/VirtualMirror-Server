@@ -5,8 +5,8 @@ import cv2
 import numpy as np
 from skimage import color
 from PIL import Image
-from src.tints.cv.detector import DetectLandmarks
-from src.tints.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
+from src.cv.detector import DetectLandmarks
+from src.settings import SIMULATOR_INPUT, SIMULATOR_OUTPUT
 import os
 import dlib
 from pylab import *
