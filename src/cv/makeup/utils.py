@@ -4,6 +4,7 @@
 .. moduleauthor:: Ali Goldani <github.com/Galiold>
 """
 
+from re import T
 import cv2
 import imutils
 import dlib
@@ -18,6 +19,7 @@ from src.cv.simulation.apply_blush import Blush
 from src.cv.simulation.apply_eyeshadow import Eyeshadow
 from src.cv.simulation.apply_eyeliner import Eyeliner
 from src.cv.simulation.apply_lipstick import Lipstick
+from src.cv.simulation.apply_lens import Lens
 
 class Color:
     def __init__(self, r=0, g=0, b=0, intensity=.7):
@@ -46,7 +48,8 @@ class Globals:
     padding_up = 70
     face_resized_width = 250
     video_feed_enabled = False
-    # Motion Detection Vars
+
+    #### Motion Detection Vars ####
     prev_frame = None
     motion_detected = True
 
@@ -55,12 +58,17 @@ class Globals:
     new_y1 = None
     new_y2 = None
     #######################
+
+    #### Makeups ####
     foundation = Foundation()
     concealer = Concealer()
     blush = Blush()
     eyeshadow = Eyeshadow()
     eyeliner = Eyeliner()
     lipstick = Lipstick()
+    lens = Lens()
+    #########################
+
     cap = cv2.VideoCapture()
     detector = dlib.get_frontal_face_detector()
     face_pose_predictor_68 = dlib.shape_predictor(SHAPE_68_PATH)
@@ -184,8 +192,21 @@ def lipstick_worker(w_frame, r, g, b, intensity, l_type, gloss, out_queue) -> No
         'range': (Globals.lipstick.x_all, Globals.lipstick.y_all)
     })
 
+def lens_worker(w_frame, r, g, b, out_queue) -> None:
+    result = Globals.lens.apply_lens(
+        w_frame,
+        r, g, b
+    )
+
+    out_queue.append({
+        'index': 6,
+        'image': result,
+        'range': (Globals.lens.x_all, Globals.lens.y_all)
+    })
+
 
 Globals.makeup_workers = {
+    'lens_worker':          { 'function': lens_worker,          'instance': Globals.lens,       'args': [], 'enabled': False },
     'lipstick_worker':      { 'function': lipstick_worker,      'instance': Globals.lipstick,   'args': [], 'enabled': False },
     'eyeliner_worker':      { 'function': eyeliner_worker,      'instance': Globals.eyeliner,   'args': [], 'enabled': False },
     'eyeshadow_worker':     { 'function': eyeshadow_worker,     'instance': Globals.eyeshadow,  'args': [], 'enabled': False },
@@ -289,7 +310,7 @@ def apply_makeup_video():
         frame_diff = cv2.absdiff(Globals.prev_frame, gray)
 
         frame_thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)[1] 
-        frame_thresh = cv2.dilate(frame_thresh, None, iterations=2) 
+        frame_thresh = cv2.dilate(frame_thresh, None, iterations=2)
 
         cnts, _ = cv2.findContours(frame_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
 
@@ -392,16 +413,16 @@ def apply_makeup_video():
         Globals.prev_frame = gray.copy()
 
         # The following line is for testing with cv2 imshow
-        return frame
+        # return frame
 
-        # (flag, encodedImage) = cv2.imencode(".png", frame)
+        (flag, encodedImage) = cv2.imencode(".png", frame)
         
-        # # ensure the frame was successfully encoded
-        # if not flag:
-        #     continue
-        # # yield the output frame in the byte format
-        # yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
-        #     bytearray(encodedImage) + b'\r\n')
+        # ensure the frame was successfully encoded
+        if not flag:
+            continue
+        # yield the output frame in the byte format
+        yield (b'--frame\r\n' b'Content-Type: image/png\r\n\r\n' +
+            bytearray(encodedImage) + b'\r\n')
 
 
 
@@ -426,6 +447,9 @@ def enable_makeup(makeup_type='', r=0, g=0, b=0, intensity=.7, lipstick_type='ha
     elif makeup_type == 'eyeliner':
         Globals.makeup_workers['eyeliner_worker']['args'] = [r, g, b, intensity]
         Globals.makeup_workers['eyeliner_worker']['enabled'] = True
+    elif makeup_type == 'lens':
+        Globals.makeup_workers['lens_worker']['args'] = [r, g, b]
+        Globals.makeup_workers['lens_worker']['enabled'] = True
 
 
 Globals.makeup_args = enable_makeup.__code__.co_varnames
@@ -446,6 +470,8 @@ def disable_makeup(makeup_type):
         Globals.makeup_workers['foundation_worker']['enabled_first'] = False
     elif makeup_type == 'eyeliner':
         Globals.makeup_workers['eyeliner_worker']['enabled'] = False
+    elif makeup_type == 'lens':
+        Globals.makeup_workers['lens_worker']['enabled'] = False
 
 
 def start_cam():
