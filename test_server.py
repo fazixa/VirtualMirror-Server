@@ -4,8 +4,7 @@ import threading
 from flask import Flask, json, render_template, Response, request
 import cv2
 import atexit
-import src.tints.cv.makeup.utils as mutils
-from multiprocessing import Process
+import src.cv.makeup.utils as mutils
 import atexit
 
 # Initialize the Flask app

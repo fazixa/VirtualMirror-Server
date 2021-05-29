@@ -20,6 +20,8 @@ scikit-image = "*"
 flask-bcrypt = "*"
 flask-jwt-extended = "*"
 imutils = "*"
+sphinx = "*"
+face-detection-tflite = "*"
 
 [dev-packages]
 
